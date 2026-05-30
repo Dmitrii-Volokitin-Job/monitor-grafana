@@ -1,0 +1,88 @@
+modules:
+  http_2xx:
+    prober: http
+    timeout: 30s
+    http:
+      method: GET
+      valid_status_codes: [200]
+      tls_config:
+        insecure_skip_verify: true
+      headers:
+        User-Agent: Monitor-Monitor/2.0-Grafana
+
+  http_2xx_or_401:
+    prober: http
+    timeout: 30s
+    http:
+      method: GET
+      valid_status_codes: [200, 401]
+      tls_config:
+        insecure_skip_verify: true
+      headers:
+        User-Agent: Monitor-Monitor/2.0-Grafana
+
+  http_302:
+    prober: http
+    timeout: 30s
+    http:
+      method: GET
+      valid_status_codes: [302]
+      no_follow_redirects: true
+      tls_config:
+        insecure_skip_verify: true
+      headers:
+        User-Agent: Monitor-Monitor/2.0-Grafana
+
+  http_401:
+    prober: http
+    timeout: 30s
+    http:
+      method: GET
+      valid_status_codes: [401]
+      tls_config:
+        insecure_skip_verify: true
+      headers:
+        User-Agent: Monitor-Monitor/2.0-Grafana
+
+  tcp_connect:
+    prober: tcp
+    timeout: 10s
+
+  icmp_ping:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: ip4
+
+  # gRPC over HTTP/2 — needs Blackbox v0.20+
+  grpc:
+    prober: grpc
+    timeout: 10s
+    grpc:
+      tls: true
+      service: ""           # leave empty to use grpc.health.v1.Health/Check default
+
+  grpc_plain:
+    prober: grpc
+    timeout: 10s
+    grpc:
+      tls: false
+      service: ""
+
+  # DNS — query the target's own SOA over UDP/53
+  dns_udp:
+    prober: dns
+    timeout: 5s
+    dns:
+      query_name: "."
+      query_type: "SOA"
+      preferred_ip_protocol: ip4
+
+  dns_tcp:
+    prober: dns
+    timeout: 5s
+    dns:
+      transport_protocol: "tcp"
+      query_name: "."
+      query_type: "SOA"
+      preferred_ip_protocol: ip4

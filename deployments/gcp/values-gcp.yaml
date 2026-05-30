@@ -1,0 +1,48 @@
+# GCP overlay for the Monitor monitoring chart.
+#
+# Usage:
+#   helm upgrade --install monitor \
+#     ../k8s-helm/dev/monitor-grafana \
+#     -f values-gcp.yaml \
+#     --set postgres.password=$(gcloud secrets versions access latest --secret=monitor-postgres-password) \
+#     --namespace monitor --create-namespace
+
+namespace: monitor
+
+monitorExporter:
+  image:
+    # Replace YOUR_PROJECT and adjust region as needed.
+    repository: europe-west3-docker.pkg.dev/YOUR_PROJECT/monitor/monitor-exporter
+    tag: latest
+    pullPolicy: Always
+
+postgres:
+  deployInCluster: false   # cloud overlay → use managed RDS / Cloud SQL
+  # Cloud SQL private IP from terraform output. Tighter coupling than the
+  # Cloud SQL Auth Proxy approach, but avoids the sidecar entirely.
+  host: PUT_CLOUD_SQL_PRIVATE_IP_HERE
+  port: 5432
+  database: monitoring
+  user: monitoring
+  password: ""   # supplied at install time via --set, or via External Secrets
+
+grafana:
+  adminUser: admin
+  adminPassword: ""
+  publicUrl: https://grafana.example.com
+
+# Use GCE ingress (Cloud Load Balancing) instead of OpenShift Routes.
+routes:
+  enabled: false
+
+# All secrets resolved from Secret Manager — populate via External Secrets
+# Operator or `kubectl create secret generic monitor-tokens --from-literal=…`
+monitorTokens:
+  gitlabToken: ""
+  gitlabTriggerToken: ""
+  sonarToken: ""
+  triggerSharedSecret: ""
+  adminUiSecretKey: ""
+
+dbSecrets:
+  postgresPassword: ""

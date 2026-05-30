@@ -1,0 +1,1596 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Alert Events",
+        "type": "alert_states"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "monitor"
+      ],
+      "title": "Monitor Dashboards",
+      "type": "dashboards"
+    },
+    {
+      "asDropdown": false,
+      "icon": "bolt",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "title": "Reset Filters",
+      "type": "link",
+      "url": "/d/monitor-health-overview/system-health-overview?var-system_group=All&var-health_status=%3E%3D%200",
+      "targetBlank": false
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "semi-dark-blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-blue",
+                "value": null
+              }
+            ]
+          },
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Health %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-red",
+                      "value": null
+                    },
+                    {
+                      "color": "semi-dark-orange",
+                      "value": 50
+                    },
+                    {
+                      "color": "semi-dark-green",
+                      "value": 90
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Healthy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "semi-dark-green"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show only UP systems",
+                    "url": "/d/monitor-health-overview/system-health-overview?${__all_variables}&var-health_status=%3D%3D%201",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Down"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "semi-dark-red"
+                }
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show only DOWN systems",
+                    "url": "/d/monitor-health-overview/system-health-overview?${__all_variables}&var-health_status=%3D%3D%200",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^(?!Time).*$/",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "text": {
+          "titleSize": 12,
+          "valueSize": 18
+        }
+      },
+      "title": "System Status",
+      "description": "Overall health percentage, total monitored systems, healthy and down counts",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "monitor-prometheus"
+          },
+          "expr": "avg(probe_success{job=\"blackbox_http\", system_group=~\"$system_group\"}) * 100",
+          "legendFormat": "Health %",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "monitor-prometheus"
+          },
+          "expr": "count(probe_success{job=\"blackbox_http\", system_group=~\"$system_group\"})",
+          "legendFormat": "Total",
+          "refId": "B",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "monitor-prometheus"
+          },
+          "expr": "count(probe_success{job=\"blackbox_http\", system_group=~\"$system_group\"} == 1) or vector(0)",
+          "legendFormat": "Healthy",
+          "refId": "C",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "monitor-prometheus"
+          },
+          "expr": "count(probe_success{job=\"blackbox_http\", system_group=~\"$system_group\"} == 0) or vector(0)",
+          "legendFormat": "Down",
+          "refId": "D",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 106,
+      "title": "SSL Certificates",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 7
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 30
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0,
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 44
+      },
+      "id": 50,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Next Cert Expiry (days)",
+      "type": "stat",
+      "links": [
+        {
+          "title": "View SSL Certificates",
+          "url": "/d/monitor-ssl-certs/ssl-certificate-status?${__url_time_range}&${__all_variables}",
+          "targetBlank": false
+        }
+      ],
+      "targets": [
+        {
+          "expr": "min((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400)",
+          "legendFormat": "Soonest",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "semi-dark-green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 4,
+        "y": 44
+      },
+      "id": 51,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Certs Valid",
+      "type": "stat",
+      "links": [
+        {
+          "title": "View SSL Certificates",
+          "url": "/d/monitor-ssl-certs/ssl-certificate-status?${__url_time_range}&${__all_variables}",
+          "targetBlank": false
+        }
+      ],
+      "targets": [
+        {
+          "expr": "count((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400 > 30) or vector(0)",
+          "legendFormat": "Valid",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "semi-dark-orange"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-orange",
+                "value": null
+              }
+            ]
+          },
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 7,
+        "y": 44
+      },
+      "id": 52,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Certs Expiring",
+      "type": "stat",
+      "links": [
+        {
+          "title": "View SSL Certificates",
+          "url": "/d/monitor-ssl-certs/ssl-certificate-status?${__url_time_range}&${__all_variables}",
+          "targetBlank": false
+        }
+      ],
+      "targets": [
+        {
+          "expr": "count((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400 > 0 and (probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400 < 30) or vector(0)",
+          "legendFormat": "Expiring",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "semi-dark-red"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              }
+            ]
+          },
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 10,
+        "y": 44
+      },
+      "id": 53,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Certs Expired",
+      "type": "stat",
+      "links": [
+        {
+          "title": "View SSL Certificates",
+          "url": "/d/monitor-ssl-certs/ssl-certificate-status?${__url_time_range}&${__all_variables}",
+          "targetBlank": false
+        }
+      ],
+      "targets": [
+        {
+          "expr": "count((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) <= 0) or vector(0)",
+          "legendFormat": "Expired",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 7
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 30
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0,
+          "min": 0,
+          "custom": {
+            "text": {
+              "valueSize": 18,
+              "titleSize": 13
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 11,
+        "x": 13,
+        "y": 44
+      },
+      "id": 54,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        }
+      },
+      "title": "Certificates - Days Until Expiry (Top 5 soonest)",
+      "type": "bargauge",
+      "links": [
+        {
+          "title": "View SSL Certificates",
+          "url": "/d/monitor-ssl-certs/ssl-certificate-status?${__url_time_range}&${__all_variables}",
+          "targetBlank": false
+        }
+      ],
+      "targets": [
+        {
+          "expr": "bottomk(5, (probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400)",
+          "legendFormat": "{{display_name}}",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 102,
+      "title": "All Systems",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "semi-dark-red",
+                        "text": "DOWN"
+                      },
+                      "1": {
+                        "color": "semi-dark-green",
+                        "text": "UP"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Response Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-green",
+                      "value": null
+                    },
+                    {
+                      "color": "semi-dark-yellow",
+                      "value": 2
+                    },
+                    {
+                      "color": "semi-dark-red",
+                      "value": 5
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "System"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View ${__data.fields.System} uptime",
+                    "url": "/d/monitor-uptime-stats/uptime-performance-statistics?${__url_time_range}&var-system_group=${__data.fields.Group}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Group"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter to ${__data.fields.Group}",
+                    "url": "/d/monitor-health-overview/system-health-overview?${__url_time_range}&var-system_group=${__data.fields.Group}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Error Details"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 200
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "semi-dark-orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 20,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Group"
+          }
+        ]
+      },
+      "title": "All Monitored Systems",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "monitor-prometheus"
+          },
+          "expr": "(probe_success{job=~\"blackbox_http|blackbox_tcp\", system_group=~\"$system_group\"} or monitor_ldap_up{system_group=~\"$system_group\"} or monitor_keycloak_up{system_group=~\"$system_group\"} or monitor_database_up{system_group=~\"$system_group\"}) ${health_status:raw}",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "monitor-prometheus"
+          },
+          "expr": "probe_duration_seconds{job=~\"blackbox_http|blackbox_tcp\", system_group=~\"$system_group\"} or monitor_ldap_response_time_ms{system_group=~\"$system_group\"} / 1000 or monitor_keycloak_response_time_ms{system_group=~\"$system_group\"} / 1000 or monitor_database_response_time_ms{system_group=~\"$system_group\"} / 1000",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "monitor-prometheus"
+          },
+          "expr": "monitor_check_result_info{system_group=~\"$system_group\"}",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "C"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "byField": "system_id"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true,
+              "__name__ 1": true,
+              "__name__ 2": true,
+              "__name__ 3": true,
+              "job 1": true,
+              "job 2": true,
+              "job 3": true,
+              "instance 2": true,
+              "instance 3": true,
+              "__param_module 1": true,
+              "__param_module 2": true,
+              "system_type 2": true,
+              "system_group 2": true,
+              "system_group 3": true,
+              "display_name 2": true,
+              "display_name 3": true,
+              "Value #C": true,
+              "status": true,
+              "check_type": true
+            },
+            "indexByName": {
+              "display_name 1": 0,
+              "system_group 1": 1,
+              "system_id": 2,
+              "system_type 1": 3,
+              "instance 1": 4,
+              "Value #A": 5,
+              "Value #B": 6,
+              "error": 7
+            },
+            "renameByName": {
+              "display_name 1": "System",
+              "system_group 1": "Group",
+              "system_type 1": "Type",
+              "system_id": "ID",
+              "instance 1": "URL",
+              "Value #A": "Status",
+              "Value #B": "Response Time",
+              "error": "Error Details"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "id": 103,
+      "title": "Trends",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Uptime %",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 35
+      },
+      "id": 30,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Uptime Trend by Group",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "avg by (system_group) (avg_over_time(probe_success{job=\"blackbox_http\", system_group=~\"$system_group\"}[5m])) * 100",
+          "legendFormat": "{{system_group}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Response Time",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 35
+      },
+      "id": 31,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Response Time Trend",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "avg by (system_group) (probe_duration_seconds{job=\"blackbox_http\", system_group=~\"$system_group\"})",
+          "legendFormat": "{{system_group}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 107,
+      "title": "Health Check Logs (Postgres)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "UP": {
+                        "color": "semi-dark-green",
+                        "text": "UP"
+                      },
+                      "DOWN": {
+                        "color": "semi-dark-red",
+                        "text": "DOWN"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Response"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-green",
+                      "value": null
+                    },
+                    {
+                      "color": "semi-dark-yellow",
+                      "value": 2000
+                    },
+                    {
+                      "color": "semi-dark-red",
+                      "value": 5000
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Error"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 300
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text",
+                  "wrapText": true
+                }
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "semi-dark-orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Group"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter to ${__data.fields.Group}",
+                    "url": "/d/monitor-health-overview/system-health-overview?${__url_time_range}&var-system_group=${__data.fields.Group}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 40,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Time"
+          }
+        ]
+      },
+      "title": "Recent Health Check Logs",
+      "description": "Check results logged to Postgres every 5 minutes. Shows all Monitor Exporter checks (LDAP, Keycloak, Database). Filtered by dashboard time range and environment group.",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT\n  hch.check_timestamp AS \"Time\",\n  ms.display_name AS \"System\",\n  ms.system_group AS \"Group\",\n  ms.system_type AS \"Type\",\n  hch.status AS \"Status\",\n  hch.response_time_ms AS \"Response\",\n  hch.error_message AS \"Error\"\nFROM health_check_history hch\nJOIN monitored_system ms ON hch.system_id = ms.id\nWHERE $__timeFilter(hch.check_timestamp)\n  AND ('$system_group' = '.*' OR ms.system_group = ANY(string_to_array('$system_group', ',')))\n  AND ('$health_status' = '>= 0'\n       OR ('$health_status' = '== 1' AND hch.status = 'UP')\n       OR ('$health_status' = '== 0' AND hch.status = 'DOWN'))\nORDER BY hch.check_timestamp DESC\nLIMIT $log_rows",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 20001,
+      "type": "stat",
+      "title": "Demo Lab A \u2014 Primary",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 50
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 75
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 0,
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^(?!Time).*$/",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "text": {
+          "titleSize": 12,
+          "valueSize": 18
+        },
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "avg(probe_success{job=~\"blackbox_http|blackbox_tcp\", system_group=\"demo-lab-a\"}) * 100",
+          "legendFormat": "$system_group",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "description": "Auto-generated per lab via dashboard variable repeat. Add a lab in the admin UI to make a new tile appear here."
+    },
+    {
+      "id": 20002,
+      "type": "stat",
+      "title": "Demo Lab B \u2014 Secondary",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 50
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 75
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 0,
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^(?!Time).*$/",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "text": {
+          "titleSize": 12,
+          "valueSize": 18
+        },
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "avg(probe_success{job=~\"blackbox_http|blackbox_tcp\", system_group=\"demo-lab-b\"}) * 100",
+          "legendFormat": "$system_group",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "description": "Auto-generated per lab via dashboard variable repeat. Add a lab in the admin UI to make a new tile appear here."
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "monitor",
+    "monitoring",
+    "overview"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "monitor-postgres"
+        },
+        "definition": "SELECT name AS __value, COALESCE(display_name, name) AS __text FROM lab WHERE is_enable = 1 ORDER BY name",
+        "includeAll": true,
+        "multi": true,
+        "name": "system_group",
+        "query": "SELECT name AS __value, COALESCE(display_name, name) AS __text FROM lab WHERE is_enable = 1 ORDER BY name",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query",
+        "label": "Environment Group",
+        "allValue": ".*"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": ">= 0"
+        },
+        "name": "health_status",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": ">= 0"
+          },
+          {
+            "selected": false,
+            "text": "UP",
+            "value": "== 1"
+          },
+          {
+            "selected": false,
+            "text": "DOWN",
+            "value": "== 0"
+          }
+        ],
+        "query": "All : >= 0, UP : == 1, DOWN : == 0",
+        "type": "custom",
+        "label": "Health Status",
+        "includeAll": false,
+        "multi": false
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "200",
+          "value": "200"
+        },
+        "name": "log_rows",
+        "options": [
+          {
+            "selected": false,
+            "text": "50",
+            "value": "50"
+          },
+          {
+            "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": true,
+            "text": "200",
+            "value": "200"
+          },
+          {
+            "selected": false,
+            "text": "500",
+            "value": "500"
+          }
+        ],
+        "query": "50,100,200,500",
+        "type": "custom",
+        "label": "Log Rows"
+      },
+      {
+        "hide": 2,
+        "name": "DS_PROMETHEUS",
+        "query": "Prometheus",
+        "type": "datasource",
+        "current": {
+          "selected": false,
+          "text": "Prometheus",
+          "value": "Prometheus"
+        }
+      },
+      {
+        "name": "system",
+        "label": "Service",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "monitor-postgres"
+        },
+        "query": "SELECT system_id AS __value, COALESCE(display_name, system_id) AS __text FROM monitored_system WHERE is_enable = 1 AND (system_group IN ($system_group) OR '$system_group' = '$__all') ORDER BY system_group, system_id",
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "refresh": 1,
+        "definition": "SELECT system_id AS __value, COALESCE(display_name, system_id) AS __text FROM monitored_system WHERE is_enable = 1 AND (system_group IN ($system_group) OR '$system_group' = '$__all') ORDER BY system_group, system_id"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "System Health Overview",
+  "uid": "monitor-health-overview",
+  "version": 1
+}

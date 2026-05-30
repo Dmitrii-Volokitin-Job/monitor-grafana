@@ -1,0 +1,13 @@
+<div class="row g-3">
+  <div class="col-md-8">
+    <label class="form-label">Target (host:port) *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="db.internal.example.com:3306">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Blackbox module</label>
+    <select class="form-select" name="blackbox_module">
+      <option value="tcp_connect" selected>tcp_connect</option>
+    </select>
+  </div>
+</div>

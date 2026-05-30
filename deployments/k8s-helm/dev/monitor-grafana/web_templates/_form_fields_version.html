@@ -1,0 +1,16 @@
+<div class="row g-3">
+  <div class="col-md-8">
+    <label class="form-label">URL *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="https://service.example.com/version">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Version strategy *</label>
+    <select class="form-select" name="version_strategy" required>
+      {% for s in version_strategies %}
+        <option value="{{ s }}" {% if s == row.version_strategy %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-text">How to extract the version from the response.</div>
+  </div>
+</div>

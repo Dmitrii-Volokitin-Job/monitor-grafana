@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor &mdash; Dashboard Administrator Guide</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    /* ---- Light Theme (default) ---- */
+    :root {
+      --color-primary: #1a56db;
+      --color-primary-light: #e8effc;
+      --color-success: #059669;
+      --color-success-light: #ecfdf5;
+      --color-danger: #dc2626;
+      --color-danger-light: #fef2f2;
+      --color-warning: #d97706;
+      --color-warning-light: #fffbeb;
+      --color-bg: #f8fafc;
+      --color-surface: #ffffff;
+      --color-border: #e2e8f0;
+      --color-text: #1e293b;
+      --color-text-secondary: #64748b;
+      --color-code-bg: #f1f5f9;
+      --color-code-text: #b91c1c;
+      --color-thead-bg: #f1f5f9;
+      --color-thead-text: #334155;
+      --color-row-hover: #f8fafc;
+      --color-h3: #334155;
+      --color-h4: #475569;
+      --color-pre-bg: #1e293b;
+      --color-pre-text: #e2e8f0;
+      --color-header-gradient-start: #1e3a5f;
+      --color-header-gradient-end: #1a56db;
+      --color-footer-bg: #1e293b;
+      --color-footer-text: #94a3b8;
+      --color-footer-link: #93c5fd;
+      --color-step-bg: var(--color-primary);
+      --color-panel-header-bg: #f1f5f9;
+      --color-badge-up-bg: #dcfce7;
+      --color-badge-up-text: #166534;
+      --color-badge-down-bg: #fecaca;
+      --color-badge-down-text: #991b1b;
+      --color-badge-port-bg: #dbeafe;
+      --color-badge-port-text: #1e40af;
+      --color-badge-interval-bg: #fef3c7;
+      --color-badge-interval-text: #92400e;
+      --color-metric-bg: #f5f3ff;
+      --color-metric-text: #7c3aed;
+      --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+      --radius: 8px;
+      --mermaid-theme: neutral;
+    }
+
+    /* ---- Dark Theme ---- */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-primary: #60a5fa;
+        --color-primary-light: #1e3a5f;
+        --color-success: #34d399;
+        --color-success-light: #064e3b;
+        --color-danger: #f87171;
+        --color-danger-light: #450a0a;
+        --color-warning: #fbbf24;
+        --color-warning-light: #451a03;
+        --color-bg: #0f172a;
+        --color-surface: #1e293b;
+        --color-border: #334155;
+        --color-text: #e2e8f0;
+        --color-text-secondary: #94a3b8;
+        --color-code-bg: #0f172a;
+        --color-code-text: #fca5a5;
+        --color-thead-bg: #0f172a;
+        --color-thead-text: #cbd5e1;
+        --color-row-hover: #253349;
+        --color-h3: #cbd5e1;
+        --color-h4: #94a3b8;
+        --color-pre-bg: #0f172a;
+        --color-pre-text: #cbd5e1;
+        --color-header-gradient-start: #0f172a;
+        --color-header-gradient-end: #1e40af;
+        --color-footer-bg: #020617;
+        --color-footer-text: #64748b;
+        --color-footer-link: #60a5fa;
+        --color-step-bg: #1e40af;
+        --color-panel-header-bg: #0f172a;
+        --color-badge-up-bg: #064e3b;
+        --color-badge-up-text: #6ee7b7;
+        --color-badge-down-bg: #450a0a;
+        --color-badge-down-text: #fca5a5;
+        --color-badge-port-bg: #1e3a5f;
+        --color-badge-port-text: #93c5fd;
+        --color-badge-interval-bg: #451a03;
+        --color-badge-interval-text: #fcd34d;
+        --color-metric-bg: #2e1065;
+        --color-metric-text: #c4b5fd;
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+        --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.4);
+        --mermaid-theme: dark;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ---- Header ---- */
+    .doc-header {
+      background: linear-gradient(135deg, var(--color-header-gradient-start) 0%, var(--color-header-gradient-end) 100%);
+      color: #fff;
+      padding: 48px 0 40px;
+      text-align: center;
+    }
+    .doc-header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    .doc-header .subtitle { opacity: 0.85; margin-top: 6px; font-size: 1.05rem; }
+    .doc-header .meta {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      font-size: 0.85rem;
+      opacity: 0.75;
+    }
+
+    /* ---- Layout ---- */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---- TOC ---- */
+    .toc-wrapper {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin: -28px auto 40px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      z-index: 2;
+    }
+    .toc-wrapper h2 { font-size: 1.1rem; margin-bottom: 14px; color: var(--color-primary); }
+    .toc-columns { columns: 2; column-gap: 40px; }
+    .toc-columns ol { padding-left: 20px; }
+    .toc-columns li { break-inside: avoid; margin-bottom: 4px; font-size: 0.92rem; }
+    .toc-columns a { color: var(--color-primary); text-decoration: none; }
+    .toc-columns a:hover { text-decoration: underline; }
+
+    /* ---- Sections ---- */
+    section { margin-bottom: 48px; }
+    section > h2 {
+      font-size: 1.45rem;
+      color: var(--color-primary);
+      border-bottom: 2px solid var(--color-primary);
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+    h3 {
+      font-size: 1.15rem;
+      margin: 28px 0 12px;
+      color: var(--color-h3);
+    }
+    h4 {
+      font-size: 1rem;
+      margin: 20px 0 8px;
+      color: var(--color-h4);
+    }
+    p { margin-bottom: 12px; }
+
+    /* ---- Cards ---- */
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card.info { border-left: 4px solid var(--color-primary); background: var(--color-primary-light); }
+    .card.success { border-left: 4px solid var(--color-success); background: var(--color-success-light); }
+    .card.warning { border-left: 4px solid var(--color-warning); background: var(--color-warning-light); }
+    .card.danger { border-left: 4px solid var(--color-danger); background: var(--color-danger-light); }
+    .card-title { font-weight: 600; margin-bottom: 6px; }
+
+    /* ---- Tables ---- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      background: var(--color-surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    thead th {
+      background: var(--color-thead-bg);
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: var(--color-thead-text);
+      border-bottom: 2px solid var(--color-border);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--color-row-hover); }
+
+    /* ---- Code ---- */
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: var(--color-code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--color-code-text);
+    }
+    pre {
+      background: var(--color-pre-bg);
+      color: var(--color-pre-text);
+      padding: 18px 22px;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      margin: 14px 0;
+    }
+    pre code { background: none; color: inherit; padding: 0; }
+    .kw { color: #93c5fd; }
+    .fn { color: #86efac; }
+    .str { color: #fbbf24; }
+    .cmt { color: #94a3b8; font-style: italic; }
+    .num { color: #f9a8d4; }
+
+    /* ---- Diagrams ---- */
+    .diagram-wrapper {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 20px 0;
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+    }
+    .diagram-wrapper .caption {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+      margin-top: 12px;
+      font-style: italic;
+    }
+    .mermaid { text-align: center; }
+
+    /* ---- Badges ---- */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .badge-up { background: var(--color-badge-up-bg); color: var(--color-badge-up-text); }
+    .badge-down { background: var(--color-badge-down-bg); color: var(--color-badge-down-text); }
+    .badge-port { background: var(--color-badge-port-bg); color: var(--color-badge-port-text); }
+    .badge-interval { background: var(--color-badge-interval-bg); color: var(--color-badge-interval-text); }
+
+    /* ---- Metric ref ---- */
+    .metric-ref {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--color-metric-text);
+      background: var(--color-metric-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* ---- Status grid ---- */
+    .status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin: 16px 0; }
+    .status-item {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .status-item .label { font-size: 0.8rem; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-item .value { font-size: 1.4rem; font-weight: 700; margin-top: 4px; }
+
+    /* ---- Flow steps ---- */
+    .flow-steps { counter-reset: step; list-style: none; padding: 0; }
+    .flow-steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 14px 14px 14px 52px;
+      margin-bottom: 10px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+    }
+    .flow-steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      width: 26px;
+      height: 26px;
+      background: var(--color-step-bg);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    /* ---- Panel cards ---- */
+    .panel-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      margin: 16px 0;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .panel-card-header {
+      background: var(--color-panel-header-bg);
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .panel-card-header .panel-type {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .panel-type-stat { background: var(--color-badge-port-bg); color: var(--color-badge-port-text); }
+    .panel-type-table { background: var(--color-badge-up-bg); color: var(--color-badge-up-text); }
+    .panel-type-timeseries { background: var(--color-badge-interval-bg); color: var(--color-badge-interval-text); }
+    .panel-type-bargauge { background: var(--color-metric-bg); color: var(--color-metric-text); }
+    .panel-type-gauge { background: var(--color-badge-down-bg); color: var(--color-badge-down-text); }
+    .panel-card-header .panel-name { font-weight: 600; }
+    .panel-card-header .panel-id { font-size: 0.8rem; color: var(--color-text-secondary); margin-left: auto; }
+    .panel-card-body { padding: 16px 18px; }
+
+    /* ---- Footer ---- */
+    footer {
+      background: var(--color-footer-bg);
+      color: var(--color-footer-text);
+      text-align: center;
+      padding: 28px;
+      font-size: 0.85rem;
+      margin-top: 60px;
+    }
+    footer a { color: var(--color-footer-link); }
+
+    @media (max-width: 768px) {
+      .toc-columns { columns: 1; }
+      .status-grid { grid-template-columns: 1fr; }
+      .doc-header .meta { flex-direction: column; gap: 6px; }
+    }
+    @media print {
+      .doc-header { background: var(--color-header-gradient-start) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      pre { white-space: pre-wrap; word-break: break-all; }
+    }
+
+    /* ---- Threshold color indicators ---- */
+    .th-red { color: #dc2626; }
+    .th-orange { color: #d97706; }
+    .th-yellow { color: #ca8a04; }
+    .th-green { color: #059669; }
+
+    @media (prefers-color-scheme: dark) {
+      .th-red { color: #f87171; }
+      .th-orange { color: #fbbf24; }
+      .th-yellow { color: #fde047; }
+      .th-green { color: #34d399; }
+      .diagram-wrapper { border-color: var(--color-border); }
+    }
+  </style>
+</head>
+<body>
+
+<header class="doc-header">
+  <div class="container">
+    <h1>Monitor &mdash; Dashboard Administrator Guide</h1>
+    <div class="subtitle">System Health Overview &amp; Uptime &amp; Performance Statistics</div>
+    <div class="meta">
+      <span>Version 1.0</span>
+      <span>February 2026</span>
+      <span>Classification: Internal &mdash; Technical</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ============================================================ -->
+  <!-- TABLE OF CONTENTS                                            -->
+  <!-- ============================================================ -->
+  <nav class="toc-wrapper">
+    <h2>Table of Contents</h2>
+    <div class="toc-columns">
+      <ol>
+        <li><a href="#sec-architecture">Architecture Overview</a></li>
+        <li><a href="#sec-data-flow">Data Collection &amp; Flow</a></li>
+        <li><a href="#sec-probe-types">Probe Types &amp; Check Mechanisms</a></li>
+        <li><a href="#sec-scrape-intervals">Scrape Intervals &amp; Timing</a></li>
+        <li><a href="#sec-recording-rules">Recording Rules &amp; Pre-Computed Metrics</a></li>
+        <li><a href="#sec-dashboard-health">Dashboard: System Health Overview</a></li>
+        <li><a href="#sec-dashboard-uptime">Dashboard: Uptime &amp; Performance Statistics</a></li>
+        <li><a href="#sec-alerting">Alerting &amp; Escalation</a></li>
+        <li><a href="#sec-data-correctness">Data Correctness &amp; Validation</a></li>
+        <li><a href="#sec-troubleshooting">Troubleshooting</a></li>
+        <li><a href="#sec-admin-operations">Common Administration Operations</a></li>
+        <li><a href="#sec-reference">Quick Reference</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- 1. ARCHITECTURE OVERVIEW                                     -->
+  <!-- ============================================================ -->
+  <section id="sec-architecture">
+    <h2>1. Architecture Overview</h2>
+
+    <p>The Monitor stack replaces a legacy Java/Angular monitoring application. It uses industry-standard open-source components arranged in a <strong>scrape &rarr; store &rarr; query &rarr; alert</strong> pipeline.</p>
+
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+graph TB
+    subgraph Targets["Monitored Systems (30+ endpoints)"]
+        direction LR
+        HTTP["HTTP/HTTPS<br/>Endpoints"]
+        TCP["TCP Services<br/>(Postgres ports)"]
+        ICMP_T["Infrastructure<br/>Nodes (ICMP)"]
+        LDAP_T["LDAP<br/>Directories"]
+        KC_T["Keycloak<br/>Instances"]
+        SSL_T["SSL/TLS<br/>Certificates"]
+    end
+
+    subgraph Exporters["Exporters Layer"]
+        BB["Blackbox Exporter<br/>:9115"]
+        CE["Custom Python Exporter<br/>:9116"]
+        SE["SSL Exporter<br/>:9219"]
+    end
+
+    subgraph Storage["Storage Layer"]
+        PROM["Prometheus<br/>:9090<br/>(15-day TSDB)"]
+        MARIA["Postgres<br/>:5432<br/>(90-day retention)"]
+    end
+
+    subgraph Presentation["Presentation &amp; Alerting"]
+        GRAF["Grafana<br/>:3000"]
+        SMTP_S["SMTP Relay<br/>(Email Alerts)"]
+    end
+
+    HTTP --> BB
+    TCP --> BB
+    ICMP_T --> BB
+    LDAP_T --> CE
+    KC_T --> CE
+    SSL_T --> SE
+
+    PROM -- "scrape every 5m" --> BB
+    PROM -- "scrape every 5m" --> CE
+    PROM -- "scrape every 1h" --> SE
+
+    CE -- "writes health logs" --> MARIA
+
+    GRAF -- "PromQL queries" --> PROM
+    GRAF -- "SQL queries" --> MARIA
+    GRAF -- "unified alerting" --> SMTP_S
+
+    style Targets fill:#f0f9ff,stroke:#1a56db,stroke-width:2px
+    style Exporters fill:#f0fdf4,stroke:#059669,stroke-width:2px
+    style Storage fill:#fefce8,stroke:#ca8a04,stroke-width:2px
+    style Presentation fill:#fdf2f8,stroke:#db2777,stroke-width:2px
+      </pre>
+      <div class="caption">Figure 1 &mdash; High-level architecture of the Monitor monitoring stack</div>
+    </div>
+
+    <h3>Component Inventory</h3>
+    <table>
+      <thead>
+        <tr><th>Component</th><th>Port</th><th>Role</th><th>Data Retention</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Prometheus</strong></td><td><span class="badge badge-port">9090</span></td><td>Time-series database, scrape engine, rule evaluator</td><td>15 days (TSDB)</td></tr>
+        <tr><td><strong>Grafana</strong></td><td><span class="badge badge-port">3000</span></td><td>Dashboards, unified alerting, provisioned configuration</td><td>N/A (queries upstream)</td></tr>
+        <tr><td><strong>Blackbox Exporter</strong></td><td><span class="badge badge-port">9115</span></td><td>Active probing: HTTP, TCP, ICMP</td><td>N/A (stateless)</td></tr>
+        <tr><td><strong>Custom Python Exporter</strong></td><td><span class="badge badge-port">9116</span></td><td>LDAP binds, Keycloak health, DB connectivity, version detection</td><td>N/A (stateless)</td></tr>
+        <tr><td><strong>SSL Exporter</strong></td><td><span class="badge badge-port">9219</span></td><td>TLS certificate expiry extraction</td><td>N/A (stateless)</td></tr>
+        <tr><td><strong>Postgres</strong></td><td><span class="badge badge-port">3306</span></td><td>Historical health-check log storage</td><td>90 days (auto-cleaned)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 2. DATA COLLECTION & FLOW                                    -->
+  <!-- ============================================================ -->
+  <section id="sec-data-flow">
+    <h2>2. Data Collection &amp; Flow</h2>
+
+    <p>Understanding <em>how</em> data reaches each dashboard panel is essential for interpreting values correctly and diagnosing issues.</p>
+
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+sequenceDiagram
+    participant T as Target System
+    participant BB as Blackbox Exporter
+    participant CE as Monitor Exporter
+    participant P as Prometheus
+    participant M as Postgres
+    participant G as Grafana
+    participant U as Admin Browser
+
+    rect rgb(240, 249, 255)
+    Note over P,BB: HTTP/TCP/ICMP Probe Flow (every 5 min)
+    P->>BB: GET /probe?target=https://system/health&module=http_2xx_or_401
+    BB->>T: HTTP GET / TCP connect / ICMP ping
+    T-->>BB: Response (status, latency, TLS info)
+    BB-->>P: probe_success=1, probe_duration_seconds=0.45,<br/>probe_ssl_earliest_cert_expiry=...
+    P->>P: Store in TSDB + evaluate recording rules
+    end
+
+    rect rgb(240, 253, 244)
+    Note over P,CE: Monitor Exporter Flow (every 5 min)
+    P->>CE: GET /metrics
+    CE->>T: LDAP bind / Keycloak GET / DB socket connect
+    T-->>CE: bind result / JSON / greeting packet
+    CE-->>P: monitor_ldap_up=1, monitor_keycloak_up=1, monitor_database_up=1
+    CE->>M: INSERT INTO health_check_history (timestamp, status, response_time_ms, ...)
+    end
+
+    rect rgb(253, 242, 248)
+    Note over G,U: Dashboard Query Flow
+    U->>G: Open System Health Overview
+    G->>P: PromQL: probe_success{job=~"blackbox_http|blackbox_tcp"} or monitor_ldap_up{} ...
+    P-->>G: Instant vector: [{system_id:"vdcr-dev-ims", value:1}, ...]
+    G->>M: SQL: SELECT ... FROM health_check_history WHERE ...
+    M-->>G: Result set: [{Time, System, Status, Response, Error}, ...]
+    G-->>U: Rendered dashboard (tables, stats, charts)
+    end
+      </pre>
+      <div class="caption">Figure 2 &mdash; End-to-end data flow from target systems to dashboard panels</div>
+    </div>
+
+    <h3>Dual Data Sources</h3>
+    <div class="card info">
+      <div class="card-title">Why two data sources?</div>
+      <p><strong>Prometheus</strong> provides real-time metrics with 15-day retention &mdash; ideal for current status, trend charts, and instant queries. <strong>Postgres</strong> stores structured health-check logs with 90-day retention &mdash; enabling historical audit trails and detailed error messages that Prometheus' label-based model cannot efficiently store.</p>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Data Source</th><th>Dashboard Panels Served</th><th>Query Language</th><th>Retention</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Prometheus</td>
+          <td>System Status stats, Environment Group cards, All Monitored Systems table, Uptime/Response trends, SSL certificates, System Versions</td>
+          <td>PromQL</td>
+          <td>15 days</td>
+        </tr>
+        <tr>
+          <td>Postgres</td>
+          <td>Recent Health Check Logs table</td>
+          <td>SQL</td>
+          <td>90 days</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 3. PROBE TYPES & CHECK MECHANISMS                            -->
+  <!-- ============================================================ -->
+  <section id="sec-probe-types">
+    <h2>3. Probe Types &amp; Check Mechanisms</h2>
+
+    <p>The stack employs six distinct check mechanisms. Each produces a binary <span class="badge badge-up">UP (1)</span> / <span class="badge badge-down">DOWN (0)</span> metric plus supplementary data (response time, error details, TLS info).</p>
+
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+graph LR
+    subgraph Blackbox["Blackbox Exporter Probes"]
+        direction TB
+        H2["http_2xx<br/><i>Expects HTTP 200</i>"]
+        H24["http_2xx_or_401<br/><i>Expects 200 or 401</i>"]
+        H3["http_302<br/><i>Expects redirect, no follow</i>"]
+        TC["tcp_connect<br/><i>TCP handshake only</i>"]
+        IC["icmp_ping<br/><i>ICMP echo request</i>"]
+    end
+
+    subgraph Custom["Custom Python Exporter"]
+        direction TB
+        LD["LDAP Check<br/><i>Anonymous bind attempt</i>"]
+        KC["Keycloak Check<br/><i>GET /auth/realms/master</i>"]
+        DB["Database Check<br/><i>TCP socket + MySQL greeting</i>"]
+        VER["Version Detection<br/><i>Multiple strategies</i>"]
+    end
+
+    H2 --> M1["probe_success"]
+    H24 --> M1
+    H3 --> M1
+    TC --> M1
+    IC --> M1
+
+    LD --> M2["monitor_ldap_up"]
+    KC --> M3["monitor_keycloak_up"]
+    DB --> M4["monitor_database_up"]
+    VER --> M5["monitor_system_version_info"]
+
+    style Blackbox fill:#dbeafe,stroke:#1e40af
+    style Custom fill:#dcfce7,stroke:#166534
+      </pre>
+      <div class="caption">Figure 3 &mdash; Check mechanisms and the metrics they produce</div>
+    </div>
+
+    <h3>3.1 HTTP Probes (Blackbox)</h3>
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">HTTP</span>
+        <span class="panel-name">http_2xx_or_401 (primary module)</span>
+      </div>
+      <div class="panel-card-body">
+        <p><strong>How it works:</strong> Prometheus instructs the Blackbox Exporter to perform an HTTP GET to the target URL. The exporter connects, sends the request, and evaluates the response status code against the module's <code>valid_status_codes</code> list.</p>
+        <ul>
+          <li><strong>Success criteria:</strong> HTTP status <code>200</code> or <code>401</code> &rarr; <code>probe_success = 1</code></li>
+          <li><strong>TLS handling:</strong> Certificate verification is <strong>skipped</strong> (<code>insecure_skip_verify: true</code>) to monitor endpoints with self-signed certificates</li>
+          <li><strong>User-Agent:</strong> <code>Monitor-Monitor/2.0-Grafana</code></li>
+          <li><strong>Timeout:</strong> 30 seconds per probe</li>
+        </ul>
+        <p><strong>Why 401 is accepted:</strong> Many monitored endpoints (IMS, CGMS, Keycloak) require authentication. A <code>401 Unauthorized</code> confirms the service is <em>running and responding</em> &mdash; the check verifies availability, not authentication.</p>
+        <p><strong>Output metrics:</strong></p>
+        <table>
+          <thead><tr><th>Metric</th><th>Type</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span class="metric-ref">probe_success</span></td><td>Gauge</td><td><code>1</code> = target responded with valid status, <code>0</code> = failure</td></tr>
+            <tr><td><span class="metric-ref">probe_duration_seconds</span></td><td>Gauge</td><td>Total probe round-trip time in seconds</td></tr>
+            <tr><td><span class="metric-ref">probe_ssl_earliest_cert_expiry</span></td><td>Gauge</td><td>Unix timestamp of the soonest SSL certificate expiry date</td></tr>
+            <tr><td><span class="metric-ref">probe_http_status_code</span></td><td>Gauge</td><td>HTTP status code returned by the target</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>3.2 TCP Connectivity Checks (Blackbox)</h3>
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">TCP</span>
+        <span class="panel-name">tcp_connect module</span>
+      </div>
+      <div class="panel-card-body">
+        <p><strong>How it works:</strong> The exporter opens a TCP socket to <code>host:port</code>. A successful three-way handshake (SYN &rarr; SYN-ACK &rarr; ACK) means the port is open and accepting connections.</p>
+        <ul>
+          <li><strong>Timeout:</strong> 10 seconds</li>
+          <li><strong>Used for:</strong> Postgres database ports (3306, NodePorts 30399/30306)</li>
+          <li><strong>Does NOT authenticate</strong> &mdash; only verifies the port is reachable</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>3.3 ICMP Ping (Blackbox)</h3>
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">ICMP</span>
+        <span class="panel-name">icmp_ping module</span>
+      </div>
+      <div class="panel-card-body">
+        <p><strong>How it works:</strong> Sends an ICMP Echo Request packet. A reply confirms the host is powered on and network-reachable.</p>
+        <ul>
+          <li><strong>Timeout:</strong> 5 seconds</li>
+          <li><strong>Scrape interval:</strong> 2 minutes (more frequent than HTTP/TCP)</li>
+          <li><strong>Preferred IP:</strong> IPv4</li>
+          <li><strong>Used for:</strong> Kubernetes master/worker nodes, lab infrastructure hosts</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>3.4 LDAP Directory Checks (Monitor Exporter)</h3>
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">LDAP</span>
+        <span class="panel-name">Custom Python Exporter</span>
+      </div>
+      <div class="panel-card-body">
+        <p><strong>How it works:</strong> The exporter uses the <code>ldap3</code> Python library to attempt an <strong>anonymous bind</strong> to the LDAP server.</p>
+        <div class="diagram-wrapper">
+          <pre class="mermaid">
+flowchart TD
+    A["Open connection to ldap(s)://host:port"] --> B{"Connection<br/>successful?"}
+    B -- No --> C["monitor_ldap_up = 0<br/>Record socket/timeout error"]
+    B -- Yes --> D["Attempt anonymous bind"]
+    D --> E{"Bind result?"}
+    E -- "Success OR<br/>Bind rejected<br/>(server responded)" --> F["monitor_ldap_up = 1"]
+    E -- "Connection error<br/>(no response)" --> C
+    F --> G["Extract version from Root DSE<br/>(vendorVersion / vendorName)"]
+    G --> H["Record response_time_ms<br/>Log to Postgres"]
+    C --> H
+
+    style C fill:#fecaca,stroke:#dc2626
+    style F fill:#dcfce7,stroke:#059669
+          </pre>
+          <div class="caption">Figure 4 &mdash; LDAP check decision flow</div>
+        </div>
+        <div class="card warning">
+          <div class="card-title">Important: Bind rejection = UP</div>
+          <p>A bind rejection (e.g., "anonymous bind disallowed") means the LDAP server <em>is running</em> and actively refusing the request. This is counted as <span class="badge badge-up">UP</span>. Only connection-level failures (timeout, connection refused, DNS failure) are <span class="badge badge-down">DOWN</span>.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>3.5 Keycloak Health Checks (Monitor Exporter)</h3>
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">KEYCLOAK</span>
+        <span class="panel-name">Custom Python Exporter</span>
+      </div>
+      <div class="panel-card-body">
+        <p><strong>How it works:</strong> Sends an HTTP GET to the <strong>public, unauthenticated</strong> endpoint <code>/auth/realms/master</code>.</p>
+        <p><strong>Success criteria (all must be true):</strong></p>
+        <ol class="flow-steps">
+          <li>HTTP response status is <code>200 OK</code></li>
+          <li>Response body is valid JSON</li>
+          <li>JSON contains a <code>"realm"</code> field matching the expected realm name (typically <code>master</code>)</li>
+        </ol>
+        <p><strong>Version detection priority:</strong></p>
+        <ol>
+          <li><code>X-Keycloak-Version</code> response header</li>
+          <li><code>Server</code> header (regex match)</li>
+          <li>Fallback: <code>/.well-known/openid-configuration</code> endpoint</li>
+        </ol>
+        <p><strong>Output metrics:</strong> <span class="metric-ref">monitor_keycloak_up</span>, <span class="metric-ref">monitor_keycloak_response_time_ms</span>, <span class="metric-ref">monitor_keycloak_realm_valid</span></p>
+      </div>
+    </div>
+
+    <h3>3.6 Database Connectivity Checks (Monitor Exporter)</h3>
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">DATABASE</span>
+        <span class="panel-name">Custom Python Exporter</span>
+      </div>
+      <div class="panel-card-body">
+        <p><strong>How it works:</strong> Opens a raw TCP socket to the Postgres/MySQL port. The MySQL protocol sends a <strong>greeting packet</strong> (handshake) before any authentication is required. The exporter parses this packet to:</p>
+        <ul>
+          <li>Confirm the database service is running (<span class="metric-ref">monitor_database_up</span>)</li>
+          <li>Extract the server version string from the greeting (bytes 5+)</li>
+          <li>Measure response time</li>
+        </ul>
+        <div class="card info">
+          <div class="card-title">No credentials required</div>
+          <p>The MySQL/Postgres protocol sends the server version in the initial handshake packet <em>before</em> authentication. This means the exporter can detect the database version and confirm availability without any database credentials.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>3.7 Version Detection Strategies</h3>
+    <table>
+      <thead><tr><th>Strategy</th><th>Endpoint</th><th>JSON Path</th><th>Target Systems</th></tr></thead>
+      <tbody>
+        <tr><td><code>spring_actuator</code></td><td><code>/management/info</code></td><td><code>build.version</code></td><td>CGMS</td></tr>
+        <tr><td><code>openapi</code></td><td><code>/v3/api-docs</code></td><td><code>info.version</code></td><td>IMS, Monitor API</td></tr>
+        <tr><td><code>camunda</code></td><td><code>/engine-rest/version</code></td><td><code>version</code></td><td>Camunda BPM</td></tr>
+        <tr><td><code>gateway_version</code></td><td><code>/gateway/version</code></td><td><code>serverVersion</code></td><td>Monitor API Gateway</td></tr>
+        <tr><td><code>kubernetes</code></td><td><code>/version</code></td><td><code>gitVersion</code></td><td>OpenShift/K8s API</td></tr>
+        <tr><td><code>json_version</code></td><td>Custom endpoint</td><td><code>version</code></td><td>Monitor UI, others</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 4. SCRAPE INTERVALS & TIMING                                 -->
+  <!-- ============================================================ -->
+  <section id="sec-scrape-intervals">
+    <h2>4. Scrape Intervals &amp; Timing</h2>
+
+    <p>Different check types run at different intervals, balancing freshness against network load and target impact.</p>
+
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+gantt
+    title Scrape Interval Timeline (15-minute window)
+    dateFormat mm:ss
+    axisFormat %M:%S
+
+    section HTTP Probes (5m)
+    Scrape 1           :a1, 00:00, 10s
+    Scrape 2           :a2, 05:00, 10s
+    Scrape 3           :a3, 10:00, 10s
+
+    section TCP Probes (5m)
+    Scrape 1           :b1, 00:00, 5s
+    Scrape 2           :b2, 05:00, 5s
+    Scrape 3           :b3, 10:00, 5s
+
+    section ICMP Pings (2m)
+    Ping 1             :c1, 00:00, 3s
+    Ping 2             :c2, 02:00, 3s
+    Ping 3             :c3, 04:00, 3s
+    Ping 4             :c4, 06:00, 3s
+    Ping 5             :c5, 08:00, 3s
+    Ping 6             :c6, 10:00, 3s
+    Ping 7             :c7, 12:00, 3s
+    Ping 8             :c8, 14:00, 3s
+
+    section Monitor Exporter (5m)
+    LDAP+KC+DB         :d1, 00:00, 20s
+    LDAP+KC+DB         :d2, 05:00, 20s
+    LDAP+KC+DB         :d3, 10:00, 20s
+
+    section SSL Certs (1h)
+    Cert Check         :e1, 00:00, 15s
+      </pre>
+      <div class="caption">Figure 5 &mdash; Scrape interval timeline showing how different probes interleave</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Job Name</th><th>Interval</th><th>Timeout</th><th>Targets</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td><code>blackbox_http</code></td><td><span class="badge badge-interval">5 min</span></td><td>35s</td><td>~25 HTTP endpoints</td><td>Matches legacy Java app check interval; avoids overwhelming targets</td></tr>
+        <tr><td><code>blackbox_tcp</code></td><td><span class="badge badge-interval">5 min</span></td><td>15s</td><td>~5 DB ports</td><td>TCP handshakes are lightweight; 5m is sufficient</td></tr>
+        <tr><td><code>blackbox_icmp</code></td><td><span class="badge badge-interval">2 min</span></td><td>10s</td><td>~8 nodes</td><td>Infrastructure nodes need faster detection (host down = critical)</td></tr>
+        <tr><td><code>monitor_exporter</code></td><td><span class="badge badge-interval">5 min</span></td><td>30s</td><td>1 exporter instance</td><td>LDAP/Keycloak checks run internally in the exporter's own loop</td></tr>
+        <tr><td><code>ssl_certificates</code></td><td><span class="badge badge-interval">1 hour</span></td><td>30s</td><td>~18 SSL endpoints</td><td>Certificates change infrequently; hourly is sufficient</td></tr>
+        <tr><td><code>prometheus</code></td><td><span class="badge badge-interval">30 sec</span></td><td>10s</td><td>Self</td><td>Internal health monitoring</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card warning">
+      <div class="card-title">Dashboard refresh vs. scrape interval</div>
+      <p>The dashboards auto-refresh every <strong>1 minute</strong>, but HTTP/TCP data only updates every <strong>5 minutes</strong>. This means refreshing the dashboard between scrapes will show the <em>same</em> data. This is expected behavior, not a bug.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 5. RECORDING RULES                                           -->
+  <!-- ============================================================ -->
+  <section id="sec-recording-rules">
+    <h2>5. Recording Rules &amp; Pre-Computed Metrics</h2>
+
+    <p>Prometheus recording rules pre-compute frequently-used aggregations. These run every 60 seconds and store results as new time series with the <code>monitor:</code> prefix (colon-separated per Prometheus convention).</p>
+
+    <h3>Health Check Rules</h3>
+    <table>
+      <thead><tr><th>Rule Name</th><th>Expression</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><span class="metric-ref">monitor:system_health_pct</span></td><td><code>avg(probe_success{job="blackbox_http"}) * 100</code></td><td>Overall health percentage across all HTTP probes</td></tr>
+        <tr><td><span class="metric-ref">monitor:group_health_pct</span></td><td><code>avg by (system_group) (probe_success{job="blackbox_http"}) * 100</code></td><td>Health percentage per environment group</td></tr>
+        <tr><td><span class="metric-ref">monitor:systems_up_total</span></td><td><code>count(probe_success{job="blackbox_http"} == 1)</code></td><td>Count of systems currently UP</td></tr>
+        <tr><td><span class="metric-ref">monitor:systems_down_total</span></td><td><code>count(probe_success{job="blackbox_http"} == 0) or vector(0)</code></td><td>Count of systems currently DOWN</td></tr>
+        <tr><td><span class="metric-ref">monitor:group_uptime_1h_pct</span></td><td><code>avg by (system_group) (avg_over_time(probe_success{...}[1h])) * 100</code></td><td>1-hour rolling uptime per group</td></tr>
+        <tr><td><span class="metric-ref">monitor:avg_response_time_seconds</span></td><td><code>avg_over_time(probe_duration_seconds{job="blackbox_http"}[5m])</code></td><td>5-minute average response time</td></tr>
+      </tbody>
+    </table>
+
+    <h3>SSL Certificate Rules</h3>
+    <table>
+      <thead><tr><th>Rule Name</th><th>Expression</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><span class="metric-ref">monitor:ssl_days_until_expiry</span></td><td><code>(probe_ssl_earliest_cert_expiry{...} - time()) / 86400</code></td><td>Days until each certificate expires</td></tr>
+        <tr><td><span class="metric-ref">monitor:ssl_expiring_30d_count</span></td><td><code>count(... / 86400 &lt; 30 and ... / 86400 &gt; 0)</code></td><td>Number of certificates expiring within 30 days</td></tr>
+        <tr><td><span class="metric-ref">monitor:ssl_expired_count</span></td><td><code>count((... - time()) &lt;= 0)</code></td><td>Number of already-expired certificates</td></tr>
+        <tr><td><span class="metric-ref">monitor:ssl_min_days_until_expiry</span></td><td><code>min((... - time()) / 86400)</code></td><td>Fewest days until any certificate expires</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 6. DASHBOARD: SYSTEM HEALTH OVERVIEW                         -->
+  <!-- ============================================================ -->
+  <section id="sec-dashboard-health">
+    <h2>6. Dashboard: System Health Overview</h2>
+
+    <div class="status-grid">
+      <div class="status-item"><div class="label">UID</div><div class="value" style="font-size:1rem;font-family:var(--font-mono)">monitor-health-overview</div></div>
+      <div class="status-item"><div class="label">Auto-Refresh</div><div class="value">1 min</div></div>
+      <div class="status-item"><div class="label">Default Time Range</div><div class="value">24 hours</div></div>
+      <div class="status-item"><div class="label">Tags</div><div class="value" style="font-size:1rem">monitor, monitoring, overview</div></div>
+    </div>
+
+    <p>This is the <strong>primary landing page</strong> (home dashboard). It provides a single-pane-of-glass view of all monitored systems, combining real-time Prometheus metrics with historical Postgres logs.</p>
+
+    <h3>6.1 Template Variables</h3>
+    <table>
+      <thead><tr><th>Variable</th><th>Label</th><th>Type</th><th>Default</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>$system_group</code></td>
+          <td>Environment Group</td>
+          <td>Query (multi-select)</td>
+          <td>All</td>
+          <td>Filters all panels to selected environment(s): demo-lab-a, demo-lab-b, demo-lab-a, CORE</td>
+        </tr>
+        <tr>
+          <td><code>$health_status</code></td>
+          <td>Health Status</td>
+          <td>Custom (single-select)</td>
+          <td>All (<code>&gt;= 0</code>)</td>
+          <td>Filters system tables by UP/DOWN status. Values: <code>&gt;= 0</code> (All), <code>== 1</code> (UP), <code>== 0</code> (DOWN)</td>
+        </tr>
+        <tr>
+          <td><code>$log_rows</code></td>
+          <td>Log Rows</td>
+          <td>Custom (single-select)</td>
+          <td>200</td>
+          <td>Limits the number of rows in the Health Check Logs table (50/100/200/500)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card info">
+      <div class="card-title">Health Status variable &mdash; how it works</div>
+      <p>The <code>$health_status</code> variable uses a PromQL operator injection technique. The variable values (<code>&gt;= 0</code>, <code>== 1</code>, <code>== 0</code>) are appended directly to PromQL expressions using the <code>:raw</code> format modifier. For example, selecting "DOWN" transforms the query from <code>probe_success{...}</code> to <code>(probe_success{...}) == 0</code>, which returns only series with value 0 (DOWN systems).</p>
+      <p>For the Postgres SQL query, the variable value is safely compared using <code>:sqlstring</code> format (which prevents SQL injection) and mapped to the <code>UP</code>/<code>DOWN</code> string values stored in Postgres.</p>
+    </div>
+
+    <h3>6.2 Dashboard Layout</h3>
+
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+block-beta
+    columns 6
+
+    block:row1:6
+        columns 6
+        A["System Status<br/>(Panel 1)<br/>stat"]:2
+        B["Demo Lab A %<br/>(Panel 10)<br/>stat"]
+        C["Demo Lab B %<br/>(Panel 11)<br/>stat"]
+        D["Demo Lab A %<br/>(Panel 12)<br/>stat"]
+        E["Core %<br/>(Panel 14)<br/>stat"]
+    end
+
+    block:row2:6
+        columns 1
+        F["All Monitored Systems (Panel 20) &mdash; table"]
+    end
+
+    block:row3:6
+        columns 1
+        G["Recent Health Check Logs (Panel 40) &mdash; table (Postgres)"]
+    end
+
+    block:row4:6
+        columns 2
+        I["Uptime Trend by Group<br/>(Panel 30)<br/>timeseries"]
+        J["Response Time Trend<br/>(Panel 31)<br/>timeseries"]
+    end
+
+    block:row5:6
+        columns 6
+        K["Next Cert<br/>Expiry<br/>(Panel 50)<br/>stat"]
+        L["Certs<br/>Valid<br/>(Panel 51)<br/>stat"]
+        M["Certs<br/>Expiring<br/>(Panel 52)<br/>stat"]
+        N["Certs<br/>Expired<br/>(Panel 53)<br/>stat"]
+        O["Top 5 Soonest Expiry (Panel 54) &mdash; bar gauge"]:2
+    end
+
+    style row1 fill:#dbeafe,stroke:#1e40af
+    style row2 fill:#dcfce7,stroke:#166534
+    style row3 fill:#fef3c7,stroke:#ca8a04
+    style row4 fill:#f3e8ff,stroke:#7c3aed
+    style row5 fill:#ffe4e6,stroke:#9f1239
+      </pre>
+      <div class="caption">Figure 6 &mdash; System Health Overview dashboard layout (not to scale)</div>
+    </div>
+
+    <h3>6.3 Panel Details</h3>
+
+    <!-- Panel 1 -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">STAT</span>
+        <span class="panel-name">System Status</span>
+        <span class="panel-id">Panel ID: 1</span>
+      </div>
+      <div class="panel-card-body">
+        <p>Displays four stat values in a single panel: Health %, Total systems, Healthy count, Down count.</p>
+
+        <h4>Queries</h4>
+        <table>
+          <thead><tr><th>Ref</th><th>Legend</th><th>PromQL Expression</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>A</td>
+              <td>Health %</td>
+              <td><code>avg(probe_success{job="blackbox_http", system_group=~"$system_group"}) * 100</code></td>
+            </tr>
+            <tr>
+              <td>B</td>
+              <td>Total</td>
+              <td><code>count(probe_success{job="blackbox_http", system_group=~"$system_group"})</code></td>
+            </tr>
+            <tr>
+              <td>C</td>
+              <td>Healthy</td>
+              <td><code>count(probe_success{job="blackbox_http", system_group=~"$system_group"} == 1) or vector(0)</code></td>
+            </tr>
+            <tr>
+              <td>D</td>
+              <td>Down</td>
+              <td><code>count(probe_success{job="blackbox_http", system_group=~"$system_group"} == 0) or vector(0)</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>Data Links (Clickable Filtering)</h4>
+        <p>The <strong>"Healthy"</strong> and <strong>"Down"</strong> stat values are clickable. Clicking them sets the <code>health_status</code> variable to filter the tables below:</p>
+        <ul>
+          <li><strong>Clicking "Healthy"</strong> &rarr; navigates to <code>?...&amp;var-health_status=%3D%3D%201</code> (URL-encoded <code>== 1</code>)</li>
+          <li><strong>Clicking "Down"</strong> &rarr; navigates to <code>?...&amp;var-health_status=%3D%3D%200</code> (URL-encoded <code>== 0</code>)</li>
+        </ul>
+        <p>The links use <code>${__all_variables}</code> to preserve all current dashboard variable selections (time range, system_group, log_rows).</p>
+
+        <div class="card warning">
+          <div class="card-title">Scope note</div>
+          <p>These counts only reflect <code>job="blackbox_http"</code> (HTTP probes). TCP, LDAP, Keycloak, and Database systems are <em>not</em> included in the stat counts but <em>are</em> included in the filtered table below. This means clicking "Healthy 24" may show more than 24 rows in the table.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panels 10-14 -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">STAT</span>
+        <span class="panel-name">Environment Group Health Cards</span>
+        <span class="panel-id">Panels: 10, 11, 12, 14</span>
+      </div>
+      <div class="panel-card-body">
+        <p>Four individual stat panels showing health percentage for each environment group. Each uses a <strong>hardcoded</strong> <code>system_group</code> value (not the variable) so they always show all groups regardless of the dropdown selection.</p>
+        <table>
+          <thead><tr><th>Panel</th><th>Group</th><th>Job Filter</th><th>Click Action</th></tr></thead>
+          <tbody>
+            <tr><td>10</td><td>demo-lab-a</td><td><code>blackbox_http</code></td><td>Sets <code>var-system_group=demo-lab-a</code></td></tr>
+            <tr><td>11</td><td>demo-lab-b</td><td><code>blackbox_http</code></td><td>Sets <code>var-system_group=demo-lab-b</code></td></tr>
+            <tr><td>12</td><td>demo-lab-a</td><td><code>blackbox_http</code></td><td>Sets <code>var-system_group=demo-lab-a</code></td></tr>
+            <tr><td>14</td><td>CORE</td><td><code>blackbox_tcp</code></td><td>Sets <code>var-system_group=CORE</code></td></tr>
+          </tbody>
+        </table>
+        <p><strong>Thresholds:</strong> <span class="th-red">Red (&lt;50%)</span> &rarr; <span class="th-orange">Orange (&lt;75%)</span> &rarr; <span class="th-yellow">Yellow (&lt;90%)</span> &rarr; <span class="th-green">Green (&ge;90%)</span></p>
+      </div>
+    </div>
+
+    <!-- Panel 20 -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-table">TABLE</span>
+        <span class="panel-name">All Monitored Systems</span>
+        <span class="panel-id">Panel ID: 20</span>
+      </div>
+      <div class="panel-card-body">
+        <p>The most comprehensive panel. Combines <strong>four different metric types</strong> into a single table using Prometheus instant queries and Grafana transformations.</p>
+
+        <h4>Query A &mdash; Status (determines UP/DOWN)</h4>
+<pre><code>(<span class="fn">probe_success</span>{job=~<span class="str">"blackbox_http|blackbox_tcp"</span>, system_group=~<span class="str">"$system_group"</span>}
+  <span class="kw">or</span> <span class="fn">monitor_ldap_up</span>{system_group=~<span class="str">"$system_group"</span>}
+  <span class="kw">or</span> <span class="fn">monitor_keycloak_up</span>{system_group=~<span class="str">"$system_group"</span>}
+  <span class="kw">or</span> <span class="fn">monitor_database_up</span>{system_group=~<span class="str">"$system_group"</span>}
+) <span class="cmt">${health_status:raw}</span></code></pre>
+        <p>The <code>${health_status:raw}</code> suffix appends the comparison operator. When "All" is selected, this becomes <code>... &gt;= 0</code> (matches both 0 and 1). When "DOWN" is selected, it becomes <code>... == 0</code> (only DOWN systems).</p>
+
+        <h4>Query B &mdash; Response Time</h4>
+<pre><code><span class="fn">probe_duration_seconds</span>{...}
+  <span class="kw">or</span> <span class="fn">monitor_ldap_response_time_ms</span>{...} / <span class="num">1000</span>
+  <span class="kw">or</span> <span class="fn">monitor_keycloak_response_time_ms</span>{...} / <span class="num">1000</span>
+  <span class="kw">or</span> <span class="fn">monitor_database_response_time_ms</span>{...} / <span class="num">1000</span></code></pre>
+        <p>Note: Monitor Exporter metrics are in <strong>milliseconds</strong> and divided by 1000 to match Blackbox's <strong>seconds</strong> unit.</p>
+
+        <h4>Query C &mdash; Error Details</h4>
+<pre><code><span class="fn">monitor_check_result_info</span>{system_group=~<span class="str">"$system_group"</span>}</code></pre>
+        <p>An info-type metric that carries error messages as label values. Only Monitor Exporter systems have this data.</p>
+
+        <h4>Transformations Pipeline</h4>
+        <div class="diagram-wrapper">
+          <pre class="mermaid">
+flowchart LR
+    A["Query A<br/>(Status)"] --> M["seriesToColumns<br/>join on system_id"]
+    B["Query B<br/>(Response Time)"] --> M
+    C["Query C<br/>(Errors)"] --> M
+    M --> O["organize<br/>hide internal columns<br/>rename to friendly names"]
+    O --> T["Final Table<br/>System | Group | ID | Type | URL | Status | Response Time | Error"]
+
+    style A fill:#dbeafe
+    style B fill:#dcfce7
+    style C fill:#fef3c7
+    style T fill:#f0fdf4,stroke:#059669,stroke-width:2px
+          </pre>
+          <div class="caption">Figure 7 &mdash; Panel 20 transformation pipeline</div>
+        </div>
+
+        <h4>Column Configuration</h4>
+        <table>
+          <thead><tr><th>Column</th><th>Source</th><th>Visual Treatment</th></tr></thead>
+          <tbody>
+            <tr><td>System</td><td><code>display_name</code> label</td><td>Clickable link &rarr; Uptime dashboard filtered to this group</td></tr>
+            <tr><td>Group</td><td><code>system_group</code> label</td><td>Clickable link &rarr; filters dashboard to this group</td></tr>
+            <tr><td>Status</td><td>Value #A (<code>0</code> or <code>1</code>)</td><td>Value mapping: <code>1</code> = <span class="badge badge-up">UP</span>, <code>0</code> = <span class="badge badge-down">DOWN</span></td></tr>
+            <tr><td>Response Time</td><td>Value #B (seconds)</td><td>Thresholds: <span class="th-green">Green (&lt;2s)</span>, <span class="th-yellow">Yellow (&lt;5s)</span>, <span class="th-red">Red (&ge;5s)</span></td></tr>
+            <tr><td>Error Details</td><td><code>error</code> label</td><td>Orange text, only populated for failing Monitor Exporter checks</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Panel 40 -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-table">TABLE</span>
+        <span class="panel-name">Recent Health Check Logs</span>
+        <span class="panel-id">Panel ID: 40</span>
+      </div>
+      <div class="panel-card-body">
+        <p>Queries <strong>Postgres</strong> for historical health check entries logged by the Custom Python Exporter. Shows LDAP, Keycloak, and Database check results.</p>
+
+        <h4>SQL Query</h4>
+<pre><code><span class="kw">SELECT</span>
+  hch.check_timestamp <span class="kw">AS</span> <span class="str">`Time`</span>,
+  ms.display_name     <span class="kw">AS</span> <span class="str">`System`</span>,
+  ms.system_group     <span class="kw">AS</span> <span class="str">`Group`</span>,
+  ms.system_type      <span class="kw">AS</span> <span class="str">`Type`</span>,
+  hch.status          <span class="kw">AS</span> <span class="str">`Status`</span>,
+  hch.response_time_ms <span class="kw">AS</span> <span class="str">`Response`</span>,
+  hch.error_message   <span class="kw">AS</span> <span class="str">`Error`</span>
+<span class="kw">FROM</span> health_check_history hch
+<span class="kw">JOIN</span> monitored_system ms <span class="kw">ON</span> hch.system_id = ms.id
+<span class="kw">WHERE</span> $__timeFilter(hch.check_timestamp)
+  <span class="kw">AND</span> ms.system_group <span class="kw">IN</span> (${system_group:sqlstring})
+  <span class="kw">AND</span> (
+    ${health_status:sqlstring} = <span class="str">'>= 0'</span>
+    <span class="kw">OR</span> (${health_status:sqlstring} = <span class="str">'== 1'</span> <span class="kw">AND</span> hch.status = <span class="str">'UP'</span>)
+    <span class="kw">OR</span> (${health_status:sqlstring} = <span class="str">'== 0'</span> <span class="kw">AND</span> hch.status = <span class="str">'DOWN'</span>)
+  )
+<span class="kw">ORDER BY</span> hch.check_timestamp <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> $log_rows</code></pre>
+
+        <h4>SQL Injection Protection</h4>
+        <div class="card success">
+          <div class="card-title">Safe variable interpolation</div>
+          <p>The <code>:sqlstring</code> format modifier wraps the variable value in quotes and escapes any embedded quotes. The query then compares the <em>escaped string</em> against hardcoded literals (<code>'>= 0'</code>, <code>'== 1'</code>, <code>'== 0'</code>). Any unexpected value simply fails to match any branch, returning no rows &mdash; a safe failure mode.</p>
+        </div>
+
+        <h4>Health Status Filtering Logic</h4>
+        <table>
+          <thead><tr><th>Variable Value</th><th>SQL Behavior</th></tr></thead>
+          <tbody>
+            <tr><td><code>&gt;= 0</code> (All)</td><td>First <code>OR</code> branch matches &rarr; no status filter applied</td></tr>
+            <tr><td><code>== 1</code> (UP)</td><td>Second branch matches &rarr; only <code>hch.status = 'UP'</code> rows</td></tr>
+            <tr><td><code>== 0</code> (DOWN)</td><td>Third branch matches &rarr; only <code>hch.status = 'DOWN'</code> rows</td></tr>
+            <tr><td>Any other value</td><td>No branch matches &rarr; <strong>no rows returned</strong> (safe failure)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Panels 30-31 -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-timeseries">TIMESERIES</span>
+        <span class="panel-name">Uptime Trend by Group &amp; Response Time Trend</span>
+        <span class="panel-id">Panels: 30, 31</span>
+      </div>
+      <div class="panel-card-body">
+        <table>
+          <thead><tr><th>Panel</th><th>Query</th><th>Y-Axis</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>30 &mdash; Uptime Trend</td>
+              <td><code>avg by (system_group) (avg_over_time(probe_success{job="blackbox_http", system_group=~"$system_group"}[5m])) * 100</code></td>
+              <td>0&ndash;100% (percentage)</td>
+            </tr>
+            <tr>
+              <td>31 &mdash; Response Time</td>
+              <td><code>avg by (system_group) (probe_duration_seconds{job="blackbox_http", system_group=~"$system_group"})</code></td>
+              <td>Seconds (unbounded)</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Both panels use smooth line interpolation, 10% fill opacity, and show legend tables with aggregation stats (mean, min, max).</p>
+      </div>
+    </div>
+
+    <!-- SSL Panels -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-stat">STAT</span>
+        <span class="panel-type panel-type-bargauge">BAR GAUGE</span>
+        <span class="panel-name">SSL Certificate Monitoring</span>
+        <span class="panel-id">Panels: 50&ndash;54</span>
+      </div>
+      <div class="panel-card-body">
+        <p>Five panels tracking SSL/TLS certificate expiry status. All compute days until expiry using:</p>
+<pre><code>(<span class="fn">probe_ssl_earliest_cert_expiry</span>{job=<span class="str">"blackbox_http"</span>} - <span class="fn">time</span>()) / <span class="num">86400</span></code></pre>
+
+        <table>
+          <thead><tr><th>Panel</th><th>Shows</th><th>Calculation</th><th>Thresholds</th></tr></thead>
+          <tbody>
+            <tr><td>50</td><td>Next Cert Expiry</td><td><code>min(...)</code></td><td>Red &lt;7d, Orange &lt;30d, Yellow &lt;60d, Green &ge;60d</td></tr>
+            <tr><td>51</td><td>Certs Valid</td><td><code>count(... &gt; 30)</code></td><td>Green (always)</td></tr>
+            <tr><td>52</td><td>Certs Expiring</td><td><code>count(0 &lt; ... &lt; 30)</code></td><td>Orange (always)</td></tr>
+            <tr><td>53</td><td>Certs Expired</td><td><code>count(... &le; 0)</code></td><td>Red (always)</td></tr>
+            <tr><td>54</td><td>Top 5 Soonest</td><td><code>bottomk(5, ...)</code></td><td>Same as Panel 50</td></tr>
+          </tbody>
+        </table>
+        <p>All SSL panels link to the dedicated <strong>SSL Certificate Status</strong> dashboard (<code>monitor-ssl-certs</code>).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 7. DASHBOARD: UPTIME & PERFORMANCE STATISTICS                -->
+  <!-- ============================================================ -->
+  <section id="sec-dashboard-uptime">
+    <h2>7. Dashboard: Uptime &amp; Performance Statistics</h2>
+
+    <div class="status-grid">
+      <div class="status-item"><div class="label">UID</div><div class="value" style="font-size:1rem;font-family:var(--font-mono)">monitor-uptime-stats</div></div>
+      <div class="status-item"><div class="label">Auto-Refresh</div><div class="value">5 min</div></div>
+      <div class="status-item"><div class="label">Default Time Range</div><div class="value">7 days</div></div>
+      <div class="status-item"><div class="label">Tags</div><div class="value" style="font-size:1rem">monitor, uptime, statistics</div></div>
+    </div>
+
+    <p>This dashboard focuses on <strong>SLA compliance and performance trends</strong> over longer time windows (24h, 7d, 30d). It answers the question: <em>"How reliable have our systems been?"</em></p>
+
+    <h3>7.1 Dashboard Layout</h3>
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+block-beta
+    columns 3
+
+    block:row1:3
+        columns 3
+        A["24h Uptime<br/>(Gauge)"]:1
+        B["7d Uptime<br/>(Gauge)"]:1
+        C["30d Uptime<br/>(Gauge)"]:1
+    end
+
+    block:row2:3
+        columns 1
+        D["Uptime by Group (7d) &mdash; SLA Compliance (Bar Gauge)"]
+    end
+
+    block:row3:3
+        columns 1
+        E["Hourly Uptime Trend (Timeseries &mdash; Bar Chart)"]
+    end
+
+    block:row4:3
+        columns 1
+        F["Bottom 10 Systems by Uptime (7d) (Table)"]
+    end
+
+    block:row5:3
+        columns 1
+        G["Daily Uptime Trend (Timeseries)"]
+    end
+
+    style row1 fill:#ffe4e6,stroke:#9f1239
+    style row2 fill:#dbeafe,stroke:#1e40af
+    style row3 fill:#fef3c7,stroke:#ca8a04
+    style row4 fill:#dcfce7,stroke:#166534
+    style row5 fill:#f3e8ff,stroke:#7c3aed
+      </pre>
+      <div class="caption">Figure 8 &mdash; Uptime &amp; Performance Statistics dashboard layout</div>
+    </div>
+
+    <h3>7.2 Panel Details</h3>
+
+    <!-- Gauges -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-gauge">GAUGE</span>
+        <span class="panel-name">Uptime Gauges (24h / 7d / 30d)</span>
+      </div>
+      <div class="panel-card-body">
+        <p>Three gauge panels showing overall uptime percentage across selected environment groups over different time windows.</p>
+
+        <h4>Core PromQL Pattern</h4>
+<pre><code><span class="fn">avg</span>(<span class="fn">avg_over_time</span>(
+  <span class="fn">probe_success</span>{job=~<span class="str">"blackbox_http|blackbox_tcp"</span>, system_group=~<span class="str">"$system_group"</span>}
+  [<span class="num">DURATION</span>]
+)) * <span class="num">100</span></code></pre>
+
+        <p>Where <code>DURATION</code> is <code>24h</code>, <code>7d</code>, or <code>30d</code>.</p>
+
+        <h4>How <code>avg_over_time</code> Computes Uptime</h4>
+        <div class="diagram-wrapper">
+          <pre class="mermaid">
+flowchart LR
+    S1["Sample 1<br/>probe_success=1"] --> AVG
+    S2["Sample 2<br/>probe_success=1"] --> AVG
+    S3["Sample 3<br/>probe_success=0"] --> AVG
+    S4["Sample 4<br/>probe_success=1"] --> AVG
+    S5["Sample 5<br/>probe_success=1"] --> AVG
+    AVG["avg_over_time<br/>(1+1+0+1+1)/5<br/>= 0.80"] --> PCT["&times; 100<br/>= 80%"]
+
+    style S3 fill:#fecaca,stroke:#dc2626
+    style PCT fill:#dcfce7,stroke:#059669,stroke-width:2px
+          </pre>
+          <div class="caption">Figure 9 &mdash; How avg_over_time converts binary success values into uptime percentage</div>
+        </div>
+
+        <p>Since <code>probe_success</code> is always <code>0</code> or <code>1</code>, averaging these values over a time window gives the fraction of time the system was UP. With 5-minute scrape intervals, a 24-hour window contains ~288 samples per system.</p>
+
+        <h4>SLA Thresholds</h4>
+        <table>
+          <thead><tr><th>Threshold</th><th>Color</th><th>SLA Equivalent</th><th>Allowed Downtime (30d)</th></tr></thead>
+          <tbody>
+            <tr><td>&lt; 95%</td><td class="th-red">Red</td><td>Below acceptable</td><td>&gt; 36 hours</td></tr>
+            <tr><td>&lt; 99%</td><td class="th-orange">Orange</td><td>Marginal</td><td>&gt; 7.2 hours</td></tr>
+            <tr><td>&lt; 99.9%</td><td class="th-yellow">Yellow</td><td>Three nines</td><td>&gt; 43 minutes</td></tr>
+            <tr><td>&ge; 99.9%</td><td class="th-green">Green</td><td>High availability</td><td>&lt; 43 minutes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bar Gauge -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-bargauge">BAR GAUGE</span>
+        <span class="panel-name">Uptime by Group (7d) &mdash; SLA Compliance</span>
+      </div>
+      <div class="panel-card-body">
+<pre><code><span class="fn">avg</span> <span class="kw">by</span> (system_group) (
+  <span class="fn">avg_over_time</span>(<span class="fn">probe_success</span>{job=~<span class="str">"blackbox_http|blackbox_tcp"</span>, system_group=~<span class="str">"$system_group"</span>}[<span class="num">7d</span>])
+) * <span class="num">100</span></code></pre>
+        <p>Horizontal bar gauge with gradient display. Scale: 90%&ndash;100% (zoomed in to highlight differences between groups). Each bar represents one <code>system_group</code>.</p>
+      </div>
+    </div>
+
+    <!-- Hourly Trend -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-timeseries">TIMESERIES</span>
+        <span class="panel-name">Hourly Uptime Trend</span>
+      </div>
+      <div class="panel-card-body">
+<pre><code><span class="fn">avg</span> <span class="kw">by</span> (system_group) (
+  <span class="fn">avg_over_time</span>(<span class="fn">probe_success</span>{job=~<span class="str">"blackbox_http|blackbox_tcp"</span>, system_group=~<span class="str">"$system_group"</span>}[<span class="num">1h</span>])
+) * <span class="num">100</span></code></pre>
+        <p>Displayed as <strong>bar chart</strong> (not line) with hourly resolution. The legend table shows mean and min values per group. Dips below 100% indicate at least one system in the group was DOWN during that hour.</p>
+      </div>
+    </div>
+
+    <!-- Bottom 10 Table -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-table">TABLE</span>
+        <span class="panel-name">Bottom 10 Systems by Uptime (7d)</span>
+      </div>
+      <div class="panel-card-body">
+        <p>Identifies the <strong>10 worst-performing systems</strong> over the past 7 days.</p>
+        <h4>Queries</h4>
+        <table>
+          <thead><tr><th>Ref</th><th>Expression</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>A</td>
+              <td><code>bottomk(10, avg_over_time(probe_success{...}[7d]) * 100)</code></td>
+              <td>10 systems with lowest uptime %</td>
+            </tr>
+            <tr>
+              <td>B</td>
+              <td><code>avg_over_time(probe_duration_seconds{...}[7d])</code></td>
+              <td>Average response time over 7 days</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Uses the same <code>seriesToColumns</code> transformation pattern as Panel 20 in the Health Overview dashboard, joining on <code>system_id</code>.</p>
+        <p><strong>Uptime % thresholds:</strong> <span class="th-red">Red (&lt;95%)</span> &rarr; <span class="th-orange">Orange (&lt;99%)</span> &rarr; <span class="th-yellow">Yellow (&lt;99.9%)</span> &rarr; <span class="th-green">Green (&ge;99.9%)</span></p>
+      </div>
+    </div>
+
+    <!-- Daily Trend -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-type panel-type-timeseries">TIMESERIES</span>
+        <span class="panel-name">Daily Uptime Trend</span>
+      </div>
+      <div class="panel-card-body">
+<pre><code><span class="fn">avg</span> <span class="kw">by</span> (system_group) (
+  <span class="fn">avg_over_time</span>(<span class="fn">probe_success</span>{job=~<span class="str">"blackbox_http|blackbox_tcp"</span>, system_group=~<span class="str">"$system_group"</span>}[<span class="num">1d</span>])
+) * <span class="num">100</span></code></pre>
+        <p>Line chart with 1-day step interval. Legend shows mean, min, and max per group. Best viewed with the 7d or 30d time range to see daily patterns.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 8. ALERTING & ESCALATION                                     -->
+  <!-- ============================================================ -->
+  <section id="sec-alerting">
+    <h2>8. Alerting &amp; Escalation</h2>
+
+    <p>Grafana Unified Alerting evaluates conditions and routes notifications via SMTP to system-specific support groups.</p>
+
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+flowchart TD
+    subgraph Evaluation["Alert Evaluation"]
+        E1["Grafana evaluates alert rules<br/>every 10 seconds minimum"]
+    end
+
+    subgraph Grouping["Alert Grouping"]
+        G1["Group by:<br/>grafana_folder + alertname + system_group"]
+        G2["group_wait: 30 seconds<br/>(buffer before first notification)"]
+    end
+
+    subgraph Routing["Notification Routing"]
+        R0{"Match<br/>system_id?"}
+        R1["*-ims &rarr; IMS Support"]
+        R2["*-cgms &rarr; CGMS Support"]
+        R3["*-tmx &rarr; TMX Support"]
+        R4["*-idms &rarr; Keycloak Support"]
+        R5["*-pbldap &rarr; Phonebook Support"]
+        R6["*-mcxas &rarr; MCxAS/CSAM Support"]
+        R7["core-database &rarr; Postgres Support"]
+        RD["Default &rarr; CC Recipients<br/>(9 team members)"]
+    end
+
+    subgraph Timing["Repeat Timing"]
+        T1["group_interval: 15 min<br/>(min time between notifications<br/>for same group)"]
+        T2["repeat_interval: 24 hours<br/>(re-notify if still firing)"]
+    end
+
+    E1 --> G1 --> G2 --> R0
+    R0 --> R1 & R2 & R3 & R4 & R5 & R6 & R7 & RD
+    R1 & R2 & R3 & R4 & R5 & R6 & R7 & RD --> T1 --> T2
+
+    style Evaluation fill:#dbeafe,stroke:#1e40af
+    style Grouping fill:#fef3c7,stroke:#ca8a04
+    style Routing fill:#dcfce7,stroke:#059669
+    style Timing fill:#f3e8ff,stroke:#7c3aed
+      </pre>
+      <div class="caption">Figure 10 &mdash; Alert routing and escalation flow</div>
+    </div>
+
+    <h3>Contact Points</h3>
+    <table>
+      <thead><tr><th>System Pattern</th><th>Contact Point</th><th>Recipients</th></tr></thead>
+      <tbody>
+        <tr><td><code>*-ims</code></td><td>IMS Support</td><td>R. Onic, D. Ristevski, B. Mohoric</td></tr>
+        <tr><td><code>*-cgms</code></td><td>CGMS Support</td><td>S. Selaru, T. Pedro</td></tr>
+        <tr><td><code>*-tmx</code></td><td>TMX Support</td><td>M. Roth, C. Aebi (Telematix)</td></tr>
+        <tr><td><code>*-idms</code></td><td>Keycloak Support</td><td>T. Stefe, B. Mohoric</td></tr>
+        <tr><td><code>*-pbldap</code></td><td>Phonebook Support</td><td>R. Onic</td></tr>
+        <tr><td><code>*-mcxas</code></td><td>MCxAS/CSAM Support</td><td>T. Pedro</td></tr>
+        <tr><td><code>core-database</code></td><td>Postgres Support</td><td>R. DosSantos, R. Onic</td></tr>
+        <tr><td><em>All alerts (CC)</em></td><td>Default CC</td><td>9 team members</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card info">
+      <div class="card-title">Route continuation</div>
+      <p>All routes have <code>continue: true</code>, meaning an alert can match <em>multiple</em> routes. For example, a <code>vdcr-dev-ims</code> alert will be sent to both the IMS Support team <em>and</em> the Default CC recipients.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 9. DATA CORRECTNESS & VALIDATION                             -->
+  <!-- ============================================================ -->
+  <section id="sec-data-correctness">
+    <h2>9. Data Correctness &amp; Validation</h2>
+
+    <p>This section explains how to verify that the dashboards display accurate data and identifies known edge cases.</p>
+
+    <h3>9.1 Verifying Prometheus Metrics</h3>
+    <ol class="flow-steps">
+      <li><strong>Check target status:</strong> Open <code>http://localhost:9090/targets</code>. All targets should show <span class="badge badge-up">UP</span> with a recent "Last Scrape" timestamp. Targets showing <span class="badge badge-down">DOWN</span> indicate the <em>exporter</em> is unreachable (not the target system itself).</li>
+      <li><strong>Query raw metrics:</strong> In Prometheus UI (<code>http://localhost:9090/graph</code>), execute <code>probe_success</code> to see all current values. Each result should have <code>system_id</code>, <code>display_name</code>, <code>system_group</code> labels.</li>
+      <li><strong>Compare counts:</strong> Execute <code>count(probe_success{job="blackbox_http"} == 1)</code> and verify it matches the "Healthy" number in Dashboard Panel 1.</li>
+      <li><strong>Check Monitor Exporter:</strong> <code>curl http://localhost:9116/metrics</code> should return all <code>monitor_*</code> metrics. Verify <code>monitor_ldap_up</code>, <code>monitor_keycloak_up</code>, and <code>monitor_database_up</code> values match expected state.</li>
+    </ol>
+
+    <h3>9.2 Verifying Postgres Logs</h3>
+<pre><code><span class="cmt">-- Count recent entries (should be ~(targets &times; checks_per_hour) per hour)</span>
+<span class="kw">SELECT COUNT</span>(*) <span class="kw">FROM</span> health_check_history
+<span class="kw">WHERE</span> check_timestamp > <span class="fn">NOW</span>() - <span class="kw">INTERVAL</span> <span class="num">1</span> <span class="kw">HOUR</span>;
+
+<span class="cmt">-- Verify all systems are logging</span>
+<span class="kw">SELECT</span> ms.system_id, ms.display_name, <span class="fn">MAX</span>(hch.check_timestamp) <span class="kw">AS</span> last_check
+<span class="kw">FROM</span> monitored_system ms
+<span class="kw">LEFT JOIN</span> health_check_history hch <span class="kw">ON</span> ms.id = hch.system_id
+<span class="kw">GROUP BY</span> ms.system_id, ms.display_name
+<span class="kw">ORDER BY</span> last_check;</code></pre>
+
+    <h3>9.3 Known Edge Cases</h3>
+
+    <div class="card warning">
+      <div class="card-title">Panel 1 count scope mismatch</div>
+      <p>The "Healthy" and "Down" counts in Panel 1 only count <code>job="blackbox_http"</code> (HTTP probes). The "All Monitored Systems" table (Panel 20) also includes TCP, LDAP, Keycloak, and Database systems. This means clicking "Healthy 24" may show a different number of rows in the filtered table.</p>
+    </div>
+
+    <div class="card warning">
+      <div class="card-title"><code>or vector(0)</code> fallback</div>
+      <p>Queries like <code>count(probe_success == 0) or vector(0)</code> use <code>or vector(0)</code> to return <code>0</code> when no systems are down (since <code>count()</code> of an empty set returns no data, not <code>0</code>). If this fallback is missing, the stat panel would show "No data" instead of "0".</p>
+    </div>
+
+
+    <div class="card warning">
+      <div class="card-title">SSL expiry calculation accuracy</div>
+      <p>The formula <code>(probe_ssl_earliest_cert_expiry - time()) / 86400</code> computes days until expiry using the <em>current evaluation time</em>. Because SSL metrics are scraped hourly, the displayed days can be up to 1 hour stale. This is acceptable for certificate monitoring.</p>
+    </div>
+
+    <h3>9.4 Security: Variable Interpolation Safety</h3>
+    <table>
+      <thead><tr><th>Variable</th><th>Format</th><th>Injection Risk</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>$system_group</code></td>
+          <td>Default (PromQL regex)</td>
+          <td>Low &mdash; values come from Prometheus label query</td>
+          <td>Prometheus escapes regex special characters</td>
+        </tr>
+        <tr>
+          <td><code>$system_group</code></td>
+          <td><code>:sqlstring</code> (SQL)</td>
+          <td>None &mdash; values are quoted and escaped</td>
+          <td><code>:sqlstring</code> prevents SQL injection</td>
+        </tr>
+        <tr>
+          <td><code>$health_status</code></td>
+          <td><code>:raw</code> (PromQL)</td>
+          <td>Medium &mdash; raw injection into PromQL</td>
+          <td>Values are from a fixed custom list (not user-editable). URL manipulation with invalid values returns empty results.</td>
+        </tr>
+        <tr>
+          <td><code>$health_status</code></td>
+          <td><code>:sqlstring</code> (SQL)</td>
+          <td>None &mdash; compared as escaped string literal</td>
+          <td>Value is wrapped in quotes; unrecognized values fail safely (no rows returned)</td>
+        </tr>
+        <tr>
+          <td><code>$log_rows</code></td>
+          <td>Default (numeric)</td>
+          <td>Low &mdash; fixed numeric options</td>
+          <td>Non-numeric values cause SQL error (no injection vector)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 10. TROUBLESHOOTING                                          -->
+  <!-- ============================================================ -->
+  <section id="sec-troubleshooting">
+    <h2>10. Troubleshooting</h2>
+
+    <h3>10.1 Decision Tree</h3>
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+flowchart TD
+    START["Dashboard shows<br/>unexpected data"] --> Q1{"Which panel<br/>is affected?"}
+
+    Q1 -- "Panel 1<br/>(System Status)" --> A1{"All values<br/>'No data'?"}
+    A1 -- Yes --> A2["Check Prometheus is running<br/>http://localhost:9090"]
+    A1 -- No --> A3["Check system_group variable<br/>matches expected targets"]
+
+    Q1 -- "Panel 20<br/>(All Systems table)" --> B1{"Table empty?"}
+    B1 -- Yes --> B2{"health_status<br/>= 'All'?"}
+    B2 -- No --> B3["Reset health_status to 'All'<br/>or click 'Reset Filters' link"]
+    B2 -- Yes --> B4["Check Prometheus targets<br/>http://localhost:9090/targets"]
+    B1 -- No --> B5{"Missing some<br/>systems?"}
+    B5 -- Yes --> B6["Check system_group filter"]
+
+    Q1 -- "Panel 40<br/>(Health Check Logs)" --> C1{"Table empty?"}
+    C1 -- Yes --> C2{"Postgres<br/>reachable?"}
+    C2 -- No --> C3["Check Postgres service<br/>port 3306"]
+    C2 -- Yes --> C4["Check mariadb.enabled=true<br/>in monitor_exporter/config.yml"]
+    C1 -- No --> C5["Check time range covers<br/>logged data period"]
+
+    Q1 -- "Trend charts<br/>(Panels 30/31)" --> D1["Flat line = no scrape variation<br/>Gaps = Prometheus was down"]
+
+    style START fill:#fef3c7,stroke:#ca8a04
+    style A2 fill:#dcfce7,stroke:#059669
+    style A3 fill:#dcfce7,stroke:#059669
+    style B3 fill:#dcfce7,stroke:#059669
+    style B4 fill:#dcfce7,stroke:#059669
+    style B6 fill:#dcfce7,stroke:#059669
+    style C3 fill:#dcfce7,stroke:#059669
+    style C4 fill:#dcfce7,stroke:#059669
+    style C5 fill:#dcfce7,stroke:#059669
+    style D1 fill:#dcfce7,stroke:#059669
+      </pre>
+      <div class="caption">Figure 11 &mdash; Troubleshooting decision tree</div>
+    </div>
+
+    <h3>10.2 Common Issues</h3>
+
+    <table>
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Resolution</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>All panels show "No data"</td>
+          <td>Prometheus datasource unreachable</td>
+          <td>Verify Prometheus at <code>:9090</code>. Check Grafana datasource settings &rarr; Test.</td>
+        </tr>
+        <tr>
+          <td>Health % is 0% but systems work</td>
+          <td>Blackbox Exporter down or targets misconfigured</td>
+          <td>Check <code>http://localhost:9115</code>. Verify target files in <code>config/targets/</code>.</td>
+        </tr>
+        <tr>
+          <td>LDAP/Keycloak systems missing from table</td>
+          <td>Monitor Exporter not running or not scraped</td>
+          <td><code>curl http://localhost:9116/metrics</code>. Check Prometheus job <code>monitor_exporter</code>.</td>
+        </tr>
+        <tr>
+          <td>Health Check Logs table empty</td>
+          <td>Postgres logging disabled or DB unreachable</td>
+          <td>Check <code>mariadb.enabled: true</code> in <code>monitor_exporter/config.yml</code>.</td>
+        </tr>
+        <tr>
+          <td>SSL days shows negative number</td>
+          <td>Certificate has expired</td>
+          <td>Expected behavior. Renew the certificate.</td>
+        </tr>
+        <tr>
+          <td>System shows DOWN but is accessible</td>
+          <td>Wrong probe module or wrong health endpoint</td>
+          <td>Check <code>__param_module</code> label and target URL in targets file. Try the probe manually: <code>curl "http://localhost:9115/probe?target=URL&module=http_2xx_or_401"</code></td>
+        </tr>
+        <tr>
+          <td>Uptime gauge stuck at old value</td>
+          <td><code>avg_over_time</code> window includes historical data</td>
+          <td>Expected. A 30d gauge averages all samples in the window. A brief outage will gradually "age out."</td>
+        </tr>
+        <tr>
+          <td>Clicking "Healthy" shows no systems</td>
+          <td>URL-encoded variable not decoded properly</td>
+          <td>Verify URL contains <code>var-health_status=%3D%3D%201</code>. Check browser doesn't double-encode.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>10.3 Manual Probe Testing</h3>
+<pre><code><span class="cmt"># Test HTTP probe for a specific target</span>
+curl -s "http://localhost:9115/probe?target=https://system.example.com/health&module=http_2xx_or_401" | grep probe_success
+
+<span class="cmt"># Test TCP probe</span>
+curl -s "http://localhost:9115/probe?target=db.example.com:5432&module=tcp_connect" | grep probe_success
+
+<span class="cmt"># Test Monitor Exporter metrics</span>
+curl -s http://localhost:9116/metrics | grep -E "monitor_(ldap|keycloak|database)_up"
+
+<span class="cmt"># Test SSL certificate days</span>
+curl -s "http://localhost:9115/probe?target=https://system.example.com&module=http_2xx_or_401" | grep ssl_earliest_cert_expiry</code></pre>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 11. COMMON ADMIN OPERATIONS                                  -->
+  <!-- ============================================================ -->
+  <section id="sec-admin-operations">
+    <h2>11. Common Administration Operations</h2>
+
+    <h3>11.1 Adding a New Monitored System</h3>
+
+    <div class="diagram-wrapper">
+      <pre class="mermaid">
+flowchart TD
+    A["Determine system type"] --> B{"What protocol?"}
+
+    B -- "HTTP/HTTPS" --> C["Add to config/targets/http_targets.yml"]
+    B -- "TCP port" --> D["Add to config/targets/tcp_targets.yml"]
+    B -- "LDAP" --> E["Add to monitor_exporter/config.yml<br/>(ldap_targets section)"]
+    B -- "Keycloak" --> F["Add to monitor_exporter/config.yml<br/>(keycloak_targets section)"]
+
+    C --> G["Choose probe module:<br/>http_2xx_or_401 (most common)<br/>http_2xx (strict 200 only)<br/>http_302 (redirect check)"]
+    G --> H["Assign labels:<br/>system_id, display_name,<br/>system_group, system_type"]
+
+    D & E & F --> H
+
+    H --> I{"Need SSL<br/>monitoring?"}
+    I -- Yes --> J["Add to config/targets/ssl_targets.yml"]
+    I -- No --> K["Reload Prometheus"]
+    J --> K
+
+    K --> L["Verify at http://localhost:9090/targets"]
+    L --> M["System appears in dashboards<br/>on next scrape cycle (5 min)"]
+
+    style M fill:#dcfce7,stroke:#059669,stroke-width:2px
+      </pre>
+      <div class="caption">Figure 12 &mdash; Adding a new monitored system workflow</div>
+    </div>
+
+    <h4>Target file entry format</h4>
+<pre><code><span class="cmt"># config/targets/http_targets.yml</span>
+- targets:
+    - https://new-system.example.com/health
+  labels:
+    system_id: <span class="str">vdcr-dev-newsystem</span>
+    display_name: <span class="str">"Demo Lab A - New System"</span>
+    system_group: <span class="str">demo-lab-a</span>
+    system_type: <span class="str">HTTP</span>
+    __param_module: <span class="str">http_2xx_or_401</span></code></pre>
+
+    <h3>11.2 Reloading Configuration</h3>
+<pre><code><span class="cmt"># Reload Prometheus (picks up target file changes)</span>
+curl -X POST http://localhost:9090/-/reload
+
+<span class="cmt"># Restart Monitor Exporter (picks up config.yml changes)</span>
+<span class="cmt"># Windows service:</span>
+nssm restart monitor-exporter
+
+<span class="cmt"># Restart Grafana (picks up provisioning changes)</span>
+nssm restart monitor-grafana</code></pre>
+
+    <h3>11.3 Configuring Alert Recipients</h3>
+    <p>Edit <code>config/provisioning/alerting/alerting.yml</code>:</p>
+<pre><code>contactPoints:
+  - orgId: <span class="num">1</span>
+    name: <span class="str">"New System Support"</span>
+    receivers:
+      - uid: <span class="str">new-system-support</span>
+        type: email
+        settings:
+          addresses: <span class="str">admin@example.com;backup@example.com</span>
+          singleEmail: <span class="kw">false</span>
+
+policies:
+  - orgId: <span class="num">1</span>
+    receiver: <span class="str">"Default CC Recipients"</span>
+    routes:
+      <span class="cmt"># Add new route:</span>
+      - receiver: <span class="str">"New System Support"</span>
+        matchers:
+          - system_id =~ <span class="str">".*-newsystem"</span>
+        continue: <span class="kw">true</span></code></pre>
+
+    <h3>11.4 Backup Procedures</h3>
+    <table>
+      <thead><tr><th>Component</th><th>What to Back Up</th><th>Command</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Dashboards</td>
+          <td>JSON files (version-controlled)</td>
+          <td><code>git commit dashboards/</code></td>
+        </tr>
+        <tr>
+          <td>Prometheus Data</td>
+          <td>TSDB snapshot</td>
+          <td><code>curl -X POST http://localhost:9090/api/v1/admin/tsdb/snapshot</code></td>
+        </tr>
+        <tr>
+          <td>Postgres Logs</td>
+          <td>Health check history</td>
+          <td><code>mysqldump -u root -p monitoring > backup.sql</code></td>
+        </tr>
+        <tr>
+          <td>Grafana State</td>
+          <td>SQLite database</td>
+          <td><code>copy C:\monitoring\data\grafana\grafana.db backup\</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 12. QUICK REFERENCE                                          -->
+  <!-- ============================================================ -->
+  <section id="sec-reference">
+    <h2>12. Quick Reference</h2>
+
+    <h3>Ports</h3>
+    <div class="status-grid">
+      <div class="status-item"><div class="label">Prometheus</div><div class="value">:9090</div></div>
+      <div class="status-item"><div class="label">Grafana</div><div class="value">:3000</div></div>
+      <div class="status-item"><div class="label">Blackbox Exporter</div><div class="value">:9115</div></div>
+      <div class="status-item"><div class="label">Monitor Exporter</div><div class="value">:9116</div></div>
+      <div class="status-item"><div class="label">SSL Exporter</div><div class="value">:9219</div></div>
+      <div class="status-item"><div class="label">Postgres</div><div class="value">:5432</div></div>
+    </div>
+
+    <h3>Key URLs</h3>
+    <table>
+      <thead><tr><th>URL</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>http://localhost:3000</code></td><td>Grafana home (System Health Overview)</td></tr>
+        <tr><td><code>http://localhost:9090/targets</code></td><td>Prometheus target status (verify scraping)</td></tr>
+        <tr><td><code>http://localhost:9090/graph</code></td><td>Prometheus query UI (ad-hoc PromQL)</td></tr>
+        <tr><td><code>http://localhost:9115/probe?target=URL&module=MODULE</code></td><td>Manual Blackbox probe test</td></tr>
+        <tr><td><code>http://localhost:9116/metrics</code></td><td>Monitor Exporter raw metrics</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Key Metrics</h3>
+    <table>
+      <thead><tr><th>Metric</th><th>Source</th><th>Values</th><th>Dashboard Usage</th></tr></thead>
+      <tbody>
+        <tr><td><span class="metric-ref">probe_success</span></td><td>Blackbox</td><td>0 / 1</td><td>Status, health %, uptime</td></tr>
+        <tr><td><span class="metric-ref">probe_duration_seconds</span></td><td>Blackbox</td><td>float (seconds)</td><td>Response time</td></tr>
+        <tr><td><span class="metric-ref">probe_ssl_earliest_cert_expiry</span></td><td>Blackbox</td><td>Unix timestamp</td><td>SSL days until expiry</td></tr>
+        <tr><td><span class="metric-ref">monitor_ldap_up</span></td><td>Custom</td><td>0 / 1</td><td>LDAP status in system table</td></tr>
+        <tr><td><span class="metric-ref">monitor_keycloak_up</span></td><td>Custom</td><td>0 / 1</td><td>Keycloak status in system table</td></tr>
+        <tr><td><span class="metric-ref">monitor_database_up</span></td><td>Custom</td><td>0 / 1</td><td>Database status in system table</td></tr>
+        <tr><td><span class="metric-ref">monitor_system_version_info</span></td><td>Custom</td><td>Info metric</td><td>Version detection table</td></tr>
+        <tr><td><span class="metric-ref">monitor_check_result_info</span></td><td>Custom</td><td>Info metric</td><td>Error details column</td></tr>
+      </tbody>
+    </table>
+
+    <h3>File Locations</h3>
+    <table>
+      <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>dashboards/system-health-overview.json</code></td><td>Main health dashboard (Panel 1, 10-14, 20, 30-31, 40, 50-54)</td></tr>
+        <tr><td><code>dashboards/uptime-statistics.json</code></td><td>Uptime &amp; performance dashboard</td></tr>
+        <tr><td><code>config/prometheus.yml</code></td><td>Prometheus scrape configuration (Windows)</td></tr>
+        <tr><td><code>config/blackbox.yml</code></td><td>Blackbox probe module definitions</td></tr>
+        <tr><td><code>config/targets/*.yml</code></td><td>Scrape target definitions (http, tcp, icmp, ssl)</td></tr>
+        <tr><td><code>config/alert_rules/*.yml</code></td><td>Prometheus recording rules</td></tr>
+        <tr><td><code>config/provisioning/alerting/alerting.yml</code></td><td>Grafana alert routing &amp; contact points</td></tr>
+        <tr><td><code>config/provisioning/datasources/datasources.yml</code></td><td>Grafana datasource definitions</td></tr>
+        <tr><td><code>monitor_exporter/exporter.py</code></td><td>Custom Python exporter source code</td></tr>
+        <tr><td><code>monitor_exporter/config.yml</code></td><td>Monitor Exporter targets &amp; settings</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Verification Scripts</h3>
+<pre><code><span class="cmt"># Full system health check</span>
+.\scripts\verify-all.ps1
+
+<span class="cmt"># Test Blackbox probes</span>
+.\scripts\test-probes.ps1
+
+<span class="cmt"># Verify Monitor Exporter metrics</span>
+.\scripts\check-exporter.ps1</code></pre>
+  </section>
+
+</div>
+
+<footer>
+  <p>Monitor &mdash; Dashboard Administrator Guide &mdash; v1.0 &mdash; February 2026</p>
+  <p>Generated from source analysis of the <code>monitor-grafana</code> repository.</p>
+</footer>
+
+<script>
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: isDark ? 'dark' : 'neutral',
+    flowchart: { curve: 'basis', htmlLabels: true },
+    sequence: { actorMargin: 50, messageMargin: 40 },
+    gantt: { fontSize: 12, barHeight: 20, barGap: 4, topPadding: 50 },
+    block: { padding: 8 }
+  });
+</script>
+
+</body>
+</html>

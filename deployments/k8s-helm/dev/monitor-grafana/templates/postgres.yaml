@@ -1,0 +1,99 @@
+{{- /*
+  In-cluster Postgres for monitor-exporter's metadata DB.
+
+  Disable this block (`postgres.deployInCluster: false`) when pointing
+  monitor-exporter at an external DB — managed RDS, Cloud SQL, or a
+  separately-managed StatefulSet. In that case populate `postgres.host`
+  with the external endpoint and `dbSecrets.postgresPassword` with its
+  credential; no in-cluster service is rendered.
+
+  Init SQL scripts come from the `monitor-db-init` ConfigMap, mounted at
+  /docker-entrypoint-initdb.d/ — same convention as the Docker Compose
+  setup, so the same files seed both runtimes.
+*/}}
+{{- if .Values.postgres.deployInCluster -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: monitor-postgres
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "postgres" "context" $) | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storage | default "10Gi" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.postgres.host | default "postgres" | trimSuffix (printf ".%s.svc.cluster.local" .Values.namespace) }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "postgres" "context" $) | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/name: monitor
+    app.kubernetes.io/component: postgres
+  ports:
+    - name: postgres
+      port: {{ .Values.postgres.port | default 5432 }}
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-postgres
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "postgres" "context" $) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate         # avoid two Pods sharing the PVC during rollout
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: monitor
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: monitor
+        app.kubernetes.io/component: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image | default "postgres:16-alpine" }}
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.user | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: monitor-db-secrets
+                  key: postgres-password
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.postgres.user | quote }}, "-d", {{ .Values.postgres.database | quote }}]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: monitor-postgres
+        - name: init
+          configMap:
+            name: monitor-db-init
+{{- end }}

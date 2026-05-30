@@ -1,0 +1,195 @@
+{{- /*
+  Demo target containers — REAL Postgres / MySQL / Redis / MongoDB /
+  Elasticsearch instances probed by demo-a-{postgres,mysql,mongo,redis,es}
+  in the seed. Mirrors the `profiles: ["full"]` services in docker-compose.yml.
+
+  Disabled by default (`demoTargets.enabled: false`) so production installs
+  stay lean. Turn on for demo / showcase clusters where every dashboard
+  panel should show real UP data instead of placeholder DOWN rows.
+
+  All containers run without auth — fine for an internal demo namespace,
+  never exposed via Ingress.
+*/}}
+{{- if .Values.demoTargets.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-postgres-target
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: demo-postgres-target
+    component: demo-target
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: demo-postgres-target }
+  template:
+    metadata:
+      labels: { app: demo-postgres-target, component: demo-target }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_DB,       value: demo }
+            - { name: POSTGRES_USER,     value: demo }
+            - { name: POSTGRES_PASSWORD, value: demo }
+          ports: [{ containerPort: 5432 }]
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "demo", "-d", "demo"] }
+            initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-postgres-target
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: { app: demo-postgres-target }
+  ports: [{ port: 5432, targetPort: 5432 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-mysql-target
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: demo-mysql-target
+    component: demo-target
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: demo-mysql-target }
+  template:
+    metadata:
+      labels: { app: demo-mysql-target, component: demo-target }
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          env:
+            - { name: MYSQL_ALLOW_EMPTY_PASSWORD, value: "yes" }
+            - { name: MYSQL_DATABASE,             value: demo }
+          ports: [{ containerPort: 3306 }]
+          readinessProbe:
+            exec: { command: ["mysqladmin", "ping", "-h", "127.0.0.1"] }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-mysql-target
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: { app: demo-mysql-target }
+  ports: [{ port: 3306, targetPort: 3306 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-redis-target
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: demo-redis-target
+    component: demo-target
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: demo-redis-target }
+  template:
+    metadata:
+      labels: { app: demo-redis-target, component: demo-target }
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports: [{ containerPort: 6379 }]
+          readinessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-redis-target
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: { app: demo-redis-target }
+  ports: [{ port: 6379, targetPort: 6379 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-mongo-target
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: demo-mongo-target
+    component: demo-target
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: demo-mongo-target }
+  template:
+    metadata:
+      labels: { app: demo-mongo-target, component: demo-target }
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7
+          ports: [{ containerPort: 27017 }]
+          readinessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+            initialDelaySeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-mongo-target
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: { app: demo-mongo-target }
+  ports: [{ port: 27017, targetPort: 27017 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-es-target
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: demo-es-target
+    component: demo-target
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: demo-es-target }
+  template:
+    metadata:
+      labels: { app: demo-es-target, component: demo-target }
+    spec:
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+          env:
+            - { name: discovery.type,         value: single-node }
+            - { name: xpack.security.enabled, value: "false" }
+            - { name: ES_JAVA_OPTS,           value: "-Xms256m -Xmx256m" }
+          ports: [{ containerPort: 9200 }]
+          readinessProbe:
+            httpGet: { path: /_cluster/health, port: 9200 }
+            initialDelaySeconds: 45
+            periodSeconds: 15
+          resources:
+            requests: { memory: "512Mi", cpu: "200m" }
+            limits:   { memory: "1Gi",   cpu: "1" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-es-target
+  namespace: {{ .Values.namespace }}
+spec:
+  selector: { app: demo-es-target }
+  ports: [{ port: 9200, targetPort: 9200 }]
+{{- end }}

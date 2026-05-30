@@ -1,0 +1,237 @@
+namespace: monitoring
+
+nameOverride: ""
+fullnameOverride: ""
+
+# --- Prometheus ---
+# Image notes: prometheus / blackbox-exporter / ssl-exporter / grafana are
+# pulled from their canonical public registries. Override with your private
+# mirror if your cluster blocks docker.io egress
+# (e.g. `image: my-registry.local/prometheus:v2.54.1`).
+# `monitor-exporter` is BUILT locally — keep the `ghcr.io/your-org/` placeholder
+# as a reminder to replace it with your own registry path.
+prometheus:
+  image: prom/prometheus:v2.54.1
+  replicas: 1
+  storage: 3Gi
+  retention: 7d
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+# --- Blackbox Exporter ---
+blackboxExporter:
+  image: prom/blackbox-exporter:v0.25.0
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# --- SSL Exporter ---
+sslExporter:
+  image: ribbybibby/ssl-exporter:2.4.3
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# --- Monitor Exporter (built in CI/CD — replace registry path with your own) ---
+monitorExporter:
+  image:
+    repository: ghcr.io/your-org/monitor-exporter
+    tag: latest
+    pullPolicy: Always
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# --- Grafana ---
+grafana:
+  image: grafana/grafana-oss:11.4.0
+  replicas: 1
+  storage: 2Gi
+  adminUser: admin
+  adminPassword: ""
+  # Public Grafana URL — embedded in alert email bodies as the deep-link base.
+  # Defaults to the OpenShift Route auto-host; override here if you have a custom domain.
+  rootUrl: "https://app.example.com"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# --- Postgres (internal metadata DB) ---
+# password intentionally NOT set here — populated via dbSecrets.postgresPassword
+# below (renders into monitor-db-secrets Secret). The exporter pod reads it
+# from POSTGRES_PASSWORD env var; Grafana from GF_DS_POSTGRES_PASSWORD.
+#
+# `deployInCluster: true` renders a single-replica Postgres Deployment +
+# Service + PVC inside the chart (mirrors the docker-compose setup, init
+# scripts loaded from the monitor-db-init ConfigMap). Set to false when
+# pointing at an external managed DB (RDS, Cloud SQL) — then populate
+# `host` with the external endpoint.
+postgres:
+  deployInCluster: true
+  image: postgres:16-alpine
+  storage: 10Gi
+  host: postgres
+  port: 5432
+  database: monitoring
+  user: monitoring
+  password: ""
+
+# --- DB Secrets (rendered into monitor-db-secrets Secret) ---
+# When all are empty the Secret is skipped — Grafana uses empty password.
+dbSecrets:
+  postgresPassword: ""
+
+# --- Demo target containers (templates/demo-targets.yaml) ---
+# When true, renders 5 Deployments + 5 Services (Postgres/MySQL/Redis/Mongo/ES)
+# that the seed's demo-a-* probes point at, so every dashboard shows real UP
+# data on first boot. Mirrors `COMPOSE_PROFILES=full` in docker-compose.yml.
+# Default false to keep production installs lean.
+demoTargets:
+  enabled: false
+
+
+
+
+
+# --- Tokens for external APIs (rendered into monitor-tokens Secret) ---
+# Populate via one of:
+#   1. argocd app set <app> --helm-set tokens.adminUiSecretKey=<value>
+#   2. Manually create/edit the monitor-tokens Secret in the namespace:
+#      oc -n monitor-dev create secret generic monitor-tokens \
+#        --from-literal=admin-ui-secret-key=<random_string> \
+#        --dry-run=client -o yaml | oc apply -f -
+#
+# When all are empty the Secret template is skipped entirely.
+tokens:
+  triggerSharedSecret: ""          # set via oc create secret (see comment above) — never committed to git
+
+
+# --- Host aliases (DNS overrides for pods) ---
+hostAliases:
+  # your-cluster (*.app.example.com)
+  - ip: db.example.com
+    hostnames:
+      - app.example.com
+      - ims-proxy-hss-monitor-dev.app.example.com
+      - cgms-cgms-monitor-dev.app.example.com
+      - app-api-monitor-dev.app.example.com
+      - app-api-gw-monitor-dev.app.example.com
+      - app-ui-monitor-dev.app.example.com
+      - ims-proxy-hss-monitor-prod.app.example.com
+      - cgms-cgms-prod.app.example.com
+      - cgms-cgms-monitor-prod.app.example.com
+      - app-api-monitor-prod.app.example.com
+      - app-api-gw-monitor-prod.app.example.com
+      - app-ui-monitor-prod.app.example.com
+      - keycloak.example.com
+  # Demo Lab A
+  - ip: db.example.com
+    hostnames:
+      - keycloak01.app.example.com
+  - ip: db.example.com
+    hostnames:
+      - cgms-cgms.app.example.com
+  - ip: db.example.com
+    hostnames:
+      - bpm-monitor.app.example.com
+      - app-api-gw-monitor.app.example.com
+      - app-api-monitor.app.example.com
+      - app-ui-monitor.app.example.com
+  - ip: db.example.com
+    hostnames:
+      - ldap.example.com
+  - ip: db.example.com
+    hostnames:
+      - ldap.example.com
+
+# --- SMTP ---
+# Grafana talks SMTP to the smtp-to-graph sidecar on the pod loopback. The
+# sidecar forwards to Microsoft Graph API via OAuth2 — replaces direct SMTP
+# AUTH since your-org tenant blocks it.
+# Path B fallback: host db.example.com, port 25, no auth (internal relay).
+smtp:
+  host: localhost
+  port: 2525
+  from: monitoring@example.com
+  fromName: Monitor
+  user: ""
+  password: ""
+  startTLSPolicy: NoStartTLS
+
+# --- smtp-to-graph sidecar ---
+smtpToGraph:
+  image:
+    repository: ghcr.io/your-org/smtp-to-graph
+    tag: latest
+    pullPolicy: Always
+  fromAddress: monitoring@example.com
+  listenPort: 2525
+  logLevel: INFO
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# --- Graph OAuth2 client-credentials ---
+# Populated manually via OpenShift Secret grafana-graph-secret, never in git.
+# Empty values keep the helm template dormant (zero-render); ArgoCD won't
+# fight a hand-applied Secret.
+#   oc -n monitor-dev create secret generic grafana-graph-secret \
+#     --from-literal=tenant-id='<tenant>' \
+#     --from-literal=client-id='<app-id>' \
+#     --from-literal=client-secret='<secret>'
+graphOAuth:
+  tenantId: ""
+  clientId: ""
+  clientSecret: ""
+
+# --- OpenShift Routes ---
+routes:
+  enabled: true
+  grafana:
+    host: ""
+  prometheus:
+    host: ""
+
+# --- Kubernetes Ingress ---
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  grafana:
+    host: grafana-monitor.example.com
+  prometheus:
+    host: prometheus-monitor.example.com
+  tls: []
+  #  - secretName: monitor-tls
+  #    hosts:
+  #      - grafana-monitor.example.com
+  #      - prometheus-monitor.example.com
+
+# --- Network annotation (OpenShift Multus) ---
+networkAnnotation: ""
+  # Example: '[ { "name": "oamne", "ips": [ "db.example.com/27" ] } ]'

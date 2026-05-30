@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitor-exporter-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "monitor-exporter" "context" $) | nindent 4 }}
+data:
+  config.yml: |
+    # Runtime process settings only — the target catalog (LDAP / Keycloak / DB /
+    # Version / HTTP / TCP / ICMP / SSL / Node) lives in the monitored_system
+    # table and is edited via the admin UI on port 9119.
+
+    exporter:
+      port: 9116
+      check_interval_seconds: 300
+
+    postgres:
+      enabled: true
+      host: {{ .Values.postgres.host }}
+      port: {{ .Values.postgres.port }}
+      database: {{ .Values.postgres.database }}
+      user: {{ .Values.postgres.user }}
+      password: ""        # injected via POSTGRES_PASSWORD env var from Secret
+      retention_days: 90
+      cleanup_interval_hours: 24
+
+    # Optional pollers — disable any you don't use. Tokens come from env vars
+    # populated by the monitor-tokens Secret.
+    e2e_exporter:
+      enabled: false
+      gitlab_url: "https://gitlab.example.com"
+      gitlab_project_id: "your-group/your-e2e-project"
+      poll_interval_seconds: 900
+
+    e2e_trigger:
+      enabled: false
+      port: 9118
+      gitlab_url: "https://gitlab.example.com"
+      gitlab_project_id: "your-group/your-e2e-project"
+      ref: "main"
+      rate_limit_seconds: 300
+
+    sonar_exporter:
+      enabled: false
+      url: "https://sonar.example.com"
+      poll_interval_seconds: 900
+      verify_tls: true
+      projects: []

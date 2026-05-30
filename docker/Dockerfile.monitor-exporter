@@ -1,0 +1,32 @@
+FROM python:3.11-slim
+
+LABEL maintainer="Monitor Team"
+LABEL description="Monitor Exporter - LDAP/Keycloak/version checks + admin UI + Prometheus HTTP-SD"
+
+WORKDIR /app
+
+# System deps for LDAP
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libldap2-dev libsasl2-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY monitor_exporter/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY monitor_exporter/db.py .
+COPY monitor_exporter/exporter.py .
+COPY monitor_exporter/admin_ui.py .
+COPY monitor_exporter/sd_endpoints.py .
+COPY monitor_exporter/datasource_sync.py .
+COPY monitor_exporter/config.yml .
+COPY monitor_exporter/templates/ ./templates/
+
+# Ensure the non-root user can read the code (COPY defaults to 0600 from
+# host umask on some systems, which fails when USER 1001 tries to read).
+RUN chmod -R a+r /app && find /app -type d -exec chmod a+rx {} +
+
+EXPOSE 9116 9118 9119
+
+USER 1001
+
+CMD ["python", "exporter.py"]

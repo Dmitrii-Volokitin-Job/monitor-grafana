@@ -1,0 +1,13 @@
+<div class="row g-3">
+  <div class="col-md-8">
+    <label class="form-label">MongoDB host *</label>
+    <input class="form-control" name="db_host" required value="{{ row.db_host or '' }}"
+           placeholder="192.0.2.10">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Port *</label>
+    <input type="number" class="form-control" name="db_port" required value="{{ row.db_port or 27017 }}" placeholder="27017 (MongoDB)">
+  </div>
+</div>
+<input type="hidden" name="url" value="{{ row.db_host or '' }}:{{ row.db_port or 27017 }}">
+<div class="form-text">TCP-only probe. A pymongo-quality check would need credentials; this matches what pymongo's <code>serverSelectionTimeoutMS</code> sees on first connect.</div>

@@ -1,0 +1,44 @@
+# Python build / cache artifacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Python virtual environments
+venv/
+.venv/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# CI/CD build artifacts
+images/
+
+# Runtime data directories
+data/
+
+# Environment files with secrets
+.env
+
+# Playwright MCP runtime cache (browser session traces, screenshots).
+# Can grow to hundreds of MB; never belongs in the repo.
+.playwright-mcp/
+
+# Claude Code — per-user local state only. The project-shared
+# CLAUDE.md and any committed prompts under .claude/ are NOT ignored
+# (they're intentionally tracked); the convention is that any file ending
+# in `.local.*` is per-user and should stay out of git.
+.claude/*.local.*
+.claude/settings.local.json

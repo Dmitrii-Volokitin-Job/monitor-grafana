@@ -1,0 +1,11 @@
+<div class="row g-3">
+  <div class="col-md-12">
+    <label class="form-label">Cluster URL *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="https://es.example.com:9200">
+    <div class="form-text">
+      Probe hits <code>GET {url}/_cluster/health</code> and reports green/yellow/red.
+      Use basic-auth in the URL (<code>https://user:pw@host:9200</code>) for secured clusters.
+    </div>
+  </div>
+</div>

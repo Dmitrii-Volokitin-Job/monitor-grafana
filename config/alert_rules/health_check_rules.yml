@@ -1,0 +1,66 @@
+# Prometheus recording rules for health check metrics
+# These pre-compute commonly used aggregations for Grafana dashboards
+
+groups:
+  - name: monitor_health_recording
+    interval: 60s
+    rules:
+      # Overall health percentage across all HTTP systems
+      - record: monitor:system_health_pct
+        expr: |
+          avg(probe_success{job="blackbox_http"}) * 100
+
+      # Health percentage per system group
+      - record: monitor:group_health_pct
+        expr: |
+          avg by (system_group) (probe_success{job="blackbox_http"}) * 100
+
+      # Count of UP systems
+      - record: monitor:systems_up_total
+        expr: |
+          count(probe_success{job="blackbox_http"} == 1)
+
+      # Count of DOWN systems
+      - record: monitor:systems_down_total
+        expr: |
+          count(probe_success{job="blackbox_http"} == 0) or vector(0)
+
+      # Average response time per system (over last 5 minutes)
+      - record: monitor:avg_response_time_seconds
+        expr: |
+          avg_over_time(probe_duration_seconds{job="blackbox_http"}[5m])
+
+      # Keycloak UP count
+      - record: monitor:keycloak_up_total
+        expr: |
+          count(monitor_keycloak_up == 1) or vector(0)
+
+      # Keycloak DOWN count
+      - record: monitor:keycloak_down_total
+        expr: |
+          count(monitor_keycloak_up == 0) or vector(0)
+
+      # Database UP count
+      - record: monitor:database_up_total
+        expr: |
+          count(monitor_database_up == 1) or vector(0)
+
+      # Database DOWN count
+      - record: monitor:database_down_total
+        expr: |
+          count(monitor_database_up == 0) or vector(0)
+
+      # LDAP UP count
+      - record: monitor:ldap_up_total
+        expr: |
+          count(monitor_ldap_up == 1) or vector(0)
+
+      # LDAP DOWN count
+      - record: monitor:ldap_down_total
+        expr: |
+          count(monitor_ldap_up == 0) or vector(0)
+
+      # Group uptime percentage over 1 hour
+      - record: monitor:group_uptime_1h_pct
+        expr: |
+          avg by (system_group) (avg_over_time(probe_success{job="blackbox_http"}[1h])) * 100

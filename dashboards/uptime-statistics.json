@@ -1,0 +1,657 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Alert Events",
+        "type": "alert_states"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "monitor"
+      ],
+      "title": "Monitor Dashboards",
+      "type": "dashboards"
+    },
+    {
+      "asDropdown": false,
+      "icon": "bolt",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "title": "Reset Filters",
+      "type": "link",
+      "url": "/d/monitor-uptime-stats/uptime-performance-statistics?var-system_group=All",
+      "targetBlank": false
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "title": "Uptime Percentages",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 95
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 99
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 99.9
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 2,
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "title": "24h Uptime",
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT 100.0 * SUM(CASE WHEN h.status='UP' THEN 1 ELSE 0 END) / NULLIF(COUNT(*),0) AS uptime FROM health_check_history h JOIN monitored_system ms ON ms.id = h.system_id WHERE h.check_timestamp >= NOW() - INTERVAL '24 hour' AND ('$system_group' = '.*' OR ms.system_group = ANY(string_to_array('$system_group', ',')))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 95
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 99
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 99.9
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 2,
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "title": "7d Uptime",
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT 100.0 * SUM(CASE WHEN h.status='UP' THEN 1 ELSE 0 END) / NULLIF(COUNT(*),0) AS uptime FROM health_check_history h JOIN monitored_system ms ON ms.id = h.system_id WHERE h.check_timestamp >= NOW() - INTERVAL '7 day' AND ('$system_group' = '.*' OR ms.system_group = ANY(string_to_array('$system_group', ',')))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 95
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 99
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 99.9
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 2,
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "title": "30d Uptime",
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT 100.0 * SUM(CASE WHEN h.status='UP' THEN 1 ELSE 0 END) / NULLIF(COUNT(*),0) AS uptime FROM health_check_history h JOIN monitored_system ms ON ms.id = h.system_id WHERE h.check_timestamp >= NOW() - INTERVAL '30 day' AND ('$system_group' = '.*' OR ms.system_group = ANY(string_to_array('$system_group', ',')))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 101,
+      "title": "Uptime by Group",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Hourly Uptime Trend",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(h.check_timestamp, 1h) AS time, ms.system_group AS metric, 100.0 * SUM(CASE WHEN h.status='UP' THEN 1 ELSE 0 END) / NULLIF(COUNT(*),0) AS value FROM health_check_history h JOIN monitored_system ms ON ms.id = h.system_id WHERE $__timeFilter(h.check_timestamp) AND ('$system_group' = '.*' OR ms.system_group = ANY(string_to_array('$system_group', ','))) GROUP BY time, ms.system_group ORDER BY time",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 102,
+      "title": "Worst Performing Systems",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Uptime %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-red",
+                      "value": null
+                    },
+                    {
+                      "color": "semi-dark-orange",
+                      "value": 90
+                    },
+                    {
+                      "color": "semi-dark-green",
+                      "value": 99
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg Response"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Group"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter to ${__data.fields.Group}",
+                    "url": "/d/monitor-uptime-stats/uptime-performance-statistics?${__url_time_range}&var-system_group=${__data.fields.Group}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 20,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Uptime %"
+          }
+        ]
+      },
+      "title": "Bottom 10 Systems by Uptime (7d)",
+      "type": "table",
+      "links": [
+        {
+          "title": "Back to System Health Overview",
+          "url": "/d/monitor-health-overview/system-health-overview?${__url_time_range}&${__all_variables}",
+          "targetBlank": false
+        }
+      ],
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ms.display_name AS \"System\", ms.system_group AS \"Group\", ms.system_id AS \"ID\", ms.system_type AS \"Type\", ms.url AS \"URL\", 100.0 * SUM(CASE WHEN h.status='UP' THEN 1 ELSE 0 END) / NULLIF(COUNT(*),0) AS \"Uptime %\", AVG(NULLIF(h.response_time_ms,0))/1000.0 AS \"Avg Response\" FROM health_check_history h JOIN monitored_system ms ON ms.id = h.system_id WHERE h.check_timestamp >= NOW() - INTERVAL '7 day' AND ('$system_group' = '.*' OR ms.system_group = ANY(string_to_array('$system_group', ','))) GROUP BY ms.id, ms.display_name, ms.system_group, ms.system_id, ms.system_type, ms.url HAVING COUNT(*) > 0 ORDER BY \"Uptime %\" ASC LIMIT 10",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 103,
+      "title": "Daily Trend",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisLabel": "Uptime %",
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 30,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Daily Uptime Trend",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(h.check_timestamp, 1d) AS time, ms.system_group AS metric, 100.0 * SUM(CASE WHEN h.status='UP' THEN 1 ELSE 0 END) / NULLIF(COUNT(*),0) AS value FROM health_check_history h JOIN monitored_system ms ON ms.id = h.system_id WHERE $__timeFilter(h.check_timestamp) AND ('$system_group' = '.*' OR ms.system_group = ANY(string_to_array('$system_group', ','))) GROUP BY time, ms.system_group ORDER BY time",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "monitor",
+    "statistics",
+    "uptime"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "monitor-postgres"
+        },
+        "definition": "SELECT name AS __value, COALESCE(display_name, name) AS __text FROM lab WHERE is_enable = 1 ORDER BY name",
+        "includeAll": true,
+        "multi": true,
+        "name": "system_group",
+        "query": "SELECT name AS __value, COALESCE(display_name, name) AS __text FROM lab WHERE is_enable = 1 ORDER BY name",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query",
+        "label": "Environment Group",
+        "allValue": ".*"
+      },
+      {
+        "hide": 2,
+        "name": "DS_PROMETHEUS",
+        "query": "Prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Uptime & Performance Statistics",
+  "uid": "monitor-uptime-stats",
+  "version": 1
+}

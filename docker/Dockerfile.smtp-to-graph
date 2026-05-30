@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+LABEL maintainer="Monitor Team"
+LABEL description="smtp-to-graph — accepts SMTP from Grafana and forwards to Microsoft Graph API"
+
+WORKDIR /app
+
+COPY smtp_to_graph/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY smtp_to_graph/main.py .
+
+EXPOSE 2525 8080
+
+USER 1001
+
+CMD ["python", "main.py"]

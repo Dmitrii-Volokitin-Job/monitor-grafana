@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-exporter
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "monitor-exporter" "context" $) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "monitor.selectorLabels" (dict "component" "monitor-exporter" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/monitor-exporter-config.yaml") . | sha256sum }}
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- if .Values.networkAnnotation }}
+        k8s.v1.cni.cncf.io/networks: {{ .Values.networkAnnotation | quote }}
+        {{- end }}
+      labels:
+        {{- include "monitor.selectorLabels" (dict "component" "monitor-exporter" "context" $) | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      hostAliases:
+        {{- toYaml .Values.hostAliases | nindent 8 }}
+      initContainers:
+        - name: db-init
+          image: "{{ .Values.monitorExporter.image.repository }}:{{ .Values.monitorExporter.image.tag }}"
+          imagePullPolicy: {{ .Values.monitorExporter.image.pullPolicy }}
+          command: ["python", "-c"]
+          args:
+            - |
+              import psycopg, glob, os
+              host = os.environ['DB_HOST']
+              port = int(os.environ['DB_PORT'])
+              user = os.environ['DB_USER']
+              password = os.environ['DB_PASSWORD']
+              dbname = os.environ.get('DB_NAME', 'monitoring')
+              conn = psycopg.connect(host=host, port=port, user=user, password=password, dbname=dbname, autocommit=True, connect_timeout=30)
+              for sql_file in sorted(glob.glob('/db-init/*.sql')):
+                  print(f"Running {sql_file}...")
+                  with open(sql_file) as f:
+                      sql = f.read()
+                  try:
+                      conn.execute(sql)
+                  except Exception as e:
+                      print(f"  Warning: {e}")
+              conn.close()
+              print("DB init complete.")
+          env:
+            - name: DB_HOST
+              value: "{{ .Values.postgres.host }}"
+            - name: DB_PORT
+              value: "{{ .Values.postgres.port }}"
+            - name: DB_USER
+              value: "{{ .Values.postgres.user }}"
+            - name: DB_NAME
+              value: "{{ .Values.postgres.database }}"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: monitor-db-secrets
+                  key: postgres-password
+          volumeMounts:
+            - name: db-init
+              mountPath: /db-init
+      containers:
+        - name: monitor-exporter
+          image: "{{ .Values.monitorExporter.image.repository }}:{{ .Values.monitorExporter.image.tag }}"
+          imagePullPolicy: {{ .Values.monitorExporter.image.pullPolicy }}
+          ports:
+            - containerPort: 9116
+              name: http
+              protocol: TCP
+            - containerPort: 9119
+              name: admin
+              protocol: TCP
+          env:
+            - name: PROMETHEUS_URL
+              value: "http://prometheus:9090"
+            # Admin UI auth: validates inbound grafana_session cookies against
+            # Grafana's /api/user. _INTERNAL_URL is server-to-server; _PUBLIC_URL
+            # is where the browser is redirected to log in.
+            - name: GRAFANA_INTERNAL_URL
+              value: "http://grafana:3000"
+            - name: GRAFANA_PUBLIC_URL
+              value: {{ .Values.grafana.publicUrl | quote }}
+            - name: ADMIN_UI_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: monitor-tokens
+                  key: admin-ui-secret-key
+                  optional: true
+            # Override postgres.password from config.yml — the exporter Python
+            # checks POSTGRES_PASSWORD env var first; this keeps the real password
+            # out of the rendered ConfigMap.
+            - name: POSTGRES_HOST
+              value: "{{ .Values.postgres.host }}"
+            - name: POSTGRES_PORT
+              value: {{ .Values.postgres.port | quote }}
+            - name: POSTGRES_USER
+              value: "{{ .Values.postgres.user }}"
+            - name: POSTGRES_DB
+              value: "{{ .Values.postgres.database }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: monitor-db-secrets
+                  key: postgres-password
+          resources:
+            {{- toYaml .Values.monitorExporter.resources | nindent 12 }}
+          readinessProbe:
+            # /sd/healthz proves both the admin UI / SD service AND the DB
+            # connection that backs it are healthy. Prometheus depends on
+            # /sd/* now, so this is the load-bearing probe.
+            httpGet:
+              path: /sd/healthz
+              port: 9119
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9116
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yml
+              subPath: config.yml
+            - name: code
+              mountPath: /app/exporter.py
+              subPath: exporter.py
+            - name: code
+              mountPath: /app/admin_ui.py
+              subPath: admin_ui.py
+            - name: code
+              mountPath: /app/sd_endpoints.py
+              subPath: sd_endpoints.py
+            - name: code
+              mountPath: /app/datasource_sync.py
+              subPath: datasource_sync.py
+            - name: web-templates
+              mountPath: /app/templates
+      volumes:
+        - name: db-init
+          configMap:
+            name: monitor-db-init
+        - name: config
+          configMap:
+            name: monitor-exporter-config
+        - name: code
+          configMap:
+            name: monitor-exporter-code
+        - name: web-templates
+          configMap:
+            name: monitor-exporter-web-templates

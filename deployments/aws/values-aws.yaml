@@ -1,0 +1,50 @@
+# AWS overlay for the Monitor monitoring Helm chart.
+#
+# Usage:
+#   helm upgrade --install monitor \
+#     ../k8s-helm/dev/monitor-grafana \
+#     -f values-aws.yaml \
+#     --set postgres.password=$(aws secretsmanager get-secret-value \
+#                              --secret-id monitor/postgres \
+#                              --query SecretString --output text | jq -r .password) \
+#     --namespace monitor --create-namespace
+
+namespace: monitor
+
+monitorExporter:
+  image:
+    # Replace ACCOUNT with your AWS account ID and adjust region.
+    repository: ACCOUNT.dkr.ecr.eu-central-1.amazonaws.com/monitor-exporter
+    tag: latest
+    pullPolicy: Always
+
+postgres:
+  deployInCluster: false   # cloud overlay → use managed RDS / Cloud SQL
+  # RDS endpoint from `terraform output postgres_endpoint`.
+  host: PUT_RDS_ENDPOINT_HERE
+  port: 5432
+  database: monitoring
+  user: monitoring
+  password: ""   # supplied at install time via --set, or via External Secrets
+
+grafana:
+  adminUser: admin
+  adminPassword: ""
+  publicUrl: https://grafana.example.com
+
+# Use ALB Ingress Controller instead of OpenShift Routes.
+routes:
+  enabled: false
+
+# Tokens / secrets resolved from AWS Secrets Manager — populate via External
+# Secrets Operator or `kubectl create secret generic monitor-tokens \
+# --from-literal=...`
+monitorTokens:
+  gitlabToken: ""
+  gitlabTriggerToken: ""
+  sonarToken: ""
+  triggerSharedSecret: ""
+  adminUiSecretKey: ""
+
+dbSecrets:
+  postgresPassword: ""

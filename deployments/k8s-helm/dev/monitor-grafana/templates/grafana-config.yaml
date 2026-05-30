@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "grafana" "context" $) | nindent 4 }}
+data:
+  grafana.ini: |
+    [server]
+    http_port = 3000
+    root_url = %(protocol)s://%(domain)s:%(http_port)s/
+
+    [security]
+    disable_gravatar = true
+
+    [paths]
+    data = /var/lib/grafana
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+    provisioning = /etc/grafana/provisioning
+
+    [smtp]
+    enabled = true
+    host = {{ .Values.smtp.host }}:{{ .Values.smtp.port }}
+    # user/password are provided at runtime via GF_SMTP_USER and GF_SMTP_PASSWORD
+    # env vars (sourced from grafana-admin-secret) — do NOT put them in this ConfigMap.
+    from_address = {{ .Values.smtp.from }}
+    from_name = {{ .Values.smtp.fromName }}
+    skip_verify = true
+    startTLS_policy = {{ .Values.smtp.startTLSPolicy | default "OpportunisticStartTLS" }}
+
+    [unified_alerting]
+    enabled = true
+    min_interval = 10s
+
+    [alerting]
+    enabled = false
+
+    [log]
+    mode = console
+    level = info

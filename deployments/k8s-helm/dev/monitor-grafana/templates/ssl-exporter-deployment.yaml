@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssl-exporter
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "ssl-exporter" "context" $) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "monitor.selectorLabels" (dict "component" "ssl-exporter" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      {{- if .Values.networkAnnotation }}
+      annotations:
+        k8s.v1.cni.cncf.io/networks: {{ .Values.networkAnnotation | quote }}
+      {{- end }}
+      labels:
+        {{- include "monitor.selectorLabels" (dict "component" "ssl-exporter" "context" $) | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      hostAliases:
+        {{- toYaml .Values.hostAliases | nindent 8 }}
+      containers:
+        - name: ssl-exporter
+          image: {{ .Values.sslExporter.image }}
+          ports:
+            - containerPort: 9117
+              name: http
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.sslExporter.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9117
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9117
+            initialDelaySeconds: 10
+            periodSeconds: 30

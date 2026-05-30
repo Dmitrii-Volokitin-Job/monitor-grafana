@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitor-exporter
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "monitor-exporter" "context" $) | nindent 4 }}
+spec:
+  selector:
+    {{- include "monitor.selectorLabels" (dict "component" "monitor-exporter" "context" $) | nindent 4 }}
+  ports:
+    - port: 9116
+      targetPort: 9116
+      name: http
+    - port: 9118
+      targetPort: 9118
+      name: trigger
+    - port: 9119
+      targetPort: 9119
+      name: admin
+  type: ClusterIP

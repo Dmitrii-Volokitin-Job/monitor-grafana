@@ -1,0 +1,8 @@
+<div class="row g-3">
+  <div class="col-md-12">
+    <label class="form-label">LDAP URL *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="ldaps://host.example.com:636">
+    <div class="form-text">Use <code>ldaps://</code> for TLS (port 636) or <code>ldap://</code> for cleartext (389).</div>
+  </div>
+</div>

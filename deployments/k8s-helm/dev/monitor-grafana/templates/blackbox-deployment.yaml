@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "blackbox-exporter" "context" $) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "monitor.selectorLabels" (dict "component" "blackbox-exporter" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/blackbox-config.yaml") . | sha256sum }}
+        {{- if .Values.networkAnnotation }}
+        k8s.v1.cni.cncf.io/networks: {{ .Values.networkAnnotation | quote }}
+        {{- end }}
+      labels:
+        {{- include "monitor.selectorLabels" (dict "component" "blackbox-exporter" "context" $) | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      hostAliases:
+        {{- toYaml .Values.hostAliases | nindent 8 }}
+      containers:
+        - name: blackbox-exporter
+          image: {{ .Values.blackboxExporter.image }}
+          args:
+            - "--config.file=/etc/blackbox/blackbox.yml"
+          ports:
+            - containerPort: 9115
+              name: http
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.blackboxExporter.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9115
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9115
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox
+      volumes:
+        - name: config
+          configMap:
+            name: blackbox-config
