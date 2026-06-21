@@ -1,0 +1,38 @@
+# Prometheus recording rules for SSL certificate metrics
+#
+# Two metric sources contribute SSL expiry info:
+#   1. probe_ssl_earliest_cert_expiry — emitted by blackbox-exporter for any
+#      HTTPS / gRPC-over-TLS probe (job=blackbox_http, blackbox_grpc).
+#   2. ssl_cert_not_after — emitted by ribbybibby/ssl-exporter for the
+#      dedicated SSL-only probes (job=ssl_certificates). One series per cert
+#      in the chain — take the min to get the earliest (leaf) expiry.
+#
+# Both are unix-seconds; convert to days-from-now with (X - time()) / 86400.
+
+groups:
+  - name: monitor_ssl_recording
+    interval: 60s
+    rules:
+      # Days until certificate expiry per target — both metric sources.
+      - record: monitor:ssl_days_until_expiry
+        expr: |
+          (probe_ssl_earliest_cert_expiry{job=~"blackbox_http|blackbox_grpc"} - time()) / 86400
+          or
+          (min by (cert_alias, cert_description, instance, job) (ssl_cert_not_after{job="ssl_certificates"}) - time()) / 86400
+
+      # Count of certificates expiring within 30 days
+      - record: monitor:ssl_expiring_30d_count
+        expr: |
+          count(monitor:ssl_days_until_expiry < 30 and monitor:ssl_days_until_expiry > 0)
+          or vector(0)
+
+      # Count of expired certificates
+      - record: monitor:ssl_expired_count
+        expr: |
+          count(monitor:ssl_days_until_expiry <= 0)
+          or vector(0)
+
+      # Minimum days until any certificate expires
+      - record: monitor:ssl_min_days_until_expiry
+        expr: |
+          min(monitor:ssl_days_until_expiry)

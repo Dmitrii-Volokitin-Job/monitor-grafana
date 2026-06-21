@@ -1,0 +1,424 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitor-db-init
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "monitor-exporter" "context" $) | nindent 4 }}
+data:
+  01-schema.sql: |
+    -- Monitoring schema for the Grafana stack (Postgres dialect).
+    -- The Postgres image creates the database from POSTGRES_DB before running
+    -- this script, so there is no CREATE DATABASE / USE here.
+    
+    CREATE TABLE IF NOT EXISTS monitored_system (
+        id BIGSERIAL PRIMARY KEY,
+        system_id VARCHAR(100) NOT NULL UNIQUE,
+        display_name VARCHAR(255) NOT NULL,
+        system_group VARCHAR(100) NOT NULL,
+        system_type VARCHAR(50) DEFAULT 'HTTP',
+        url VARCHAR(500),
+        is_enable SMALLINT DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_system_group ON monitored_system (system_group);
+    
+    CREATE TABLE IF NOT EXISTS health_check_history (
+        id BIGSERIAL PRIMARY KEY,
+        system_id BIGINT NOT NULL REFERENCES monitored_system(id),
+        check_timestamp TIMESTAMP NOT NULL,
+        status VARCHAR(20) NOT NULL,
+        http_status_code INT,
+        response_time_ms BIGINT,
+        error_message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_hch_system_id ON health_check_history (system_id);
+    CREATE INDEX IF NOT EXISTS idx_hch_check_ts ON health_check_history (check_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_hch_status ON health_check_history (status);
+    
+    CREATE TABLE IF NOT EXISTS alert_state (
+        id BIGSERIAL PRIMARY KEY,
+        system_id BIGINT NOT NULL REFERENCES monitored_system(id),
+        current_status VARCHAR(20) NOT NULL DEFAULT 'UP',
+        current_severity VARCHAR(20),
+        down_since TIMESTAMP,
+        last_status_change TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        alert_count INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_as_system_id ON alert_state (system_id);
+    CREATE INDEX IF NOT EXISTS idx_as_status ON alert_state (current_status);
+    
+    CREATE TABLE IF NOT EXISTS email_log (
+        id BIGSERIAL PRIMARY KEY,
+        related_system_id BIGINT REFERENCES monitored_system(id),
+        sent_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        subject VARCHAR(500),
+        to_recipients VARCHAR(1000),
+        email_type VARCHAR(50),
+        status VARCHAR(20) DEFAULT 'SENT',
+        retry_count INT DEFAULT 0,
+        error_message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_el_timestamp ON email_log (sent_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_el_system ON email_log (related_system_id);
+    CREATE INDEX IF NOT EXISTS idx_el_type ON email_log (email_type);
+    
+    CREATE TABLE IF NOT EXISTS maintenance_window (
+        id BIGSERIAL PRIMARY KEY,
+        title VARCHAR(255),
+        maintenance_type VARCHAR(100),
+        start_time TIMESTAMP NOT NULL,
+        end_time TIMESTAMP NOT NULL,
+        is_cancelled SMALLINT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_mw_time ON maintenance_window (start_time, end_time);
+    
+    CREATE TABLE IF NOT EXISTS maintenance_window_system (
+        id BIGSERIAL PRIMARY KEY,
+        maintenance_window_id BIGINT NOT NULL REFERENCES maintenance_window(id),
+        system_id BIGINT NOT NULL REFERENCES monitored_system(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_mws_window ON maintenance_window_system (maintenance_window_id);
+    CREATE INDEX IF NOT EXISTS idx_mws_system ON maintenance_window_system (system_id);
+    
+    -- Trigger to mimic MariaDB's ON UPDATE CURRENT_TIMESTAMP for monitored_system + alert_state.
+    CREATE OR REPLACE FUNCTION touch_updated_at() RETURNS trigger AS $$
+    BEGIN
+      NEW.updated_at = CURRENT_TIMESTAMP;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+    
+    DROP TRIGGER IF EXISTS trg_monitored_system_updated ON monitored_system;
+    CREATE TRIGGER trg_monitored_system_updated BEFORE UPDATE ON monitored_system
+      FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+    
+    DROP TRIGGER IF EXISTS trg_alert_state_updated ON alert_state;
+    CREATE TRIGGER trg_alert_state_updated BEFORE UPDATE ON alert_state
+      FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+  06-extend-monitored-system.sql: |
+    -- 06-extend-monitored-system.sql (Postgres dialect)
+    --
+    -- Extends monitored_system to hold every parameter previously scattered across
+    -- config/targets/*.yml and monitor_exporter/config.yml. After this migration
+    -- the DB becomes the single source of truth; the admin UI writes here, the
+    -- exporter reads from here, and Prometheus discovers targets via HTTP-SD over
+    -- the new endpoints in sd_endpoints.py.
+    
+    ALTER TABLE monitored_system
+      ADD COLUMN IF NOT EXISTS description          VARCHAR(500),
+      ADD COLUMN IF NOT EXISTS health_check_path    VARCHAR(200),
+      ADD COLUMN IF NOT EXISTS expected_status_code INT,
+      ADD COLUMN IF NOT EXISTS timeout_seconds      INT          DEFAULT 30,
+      ADD COLUMN IF NOT EXISTS priority             INT          DEFAULT 5,
+      ADD COLUMN IF NOT EXISTS blackbox_module      VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS version_strategy     VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS realm_path           VARCHAR(200),
+      ADD COLUMN IF NOT EXISTS db_host              VARCHAR(200),
+      ADD COLUMN IF NOT EXISTS db_port              INT,
+      ADD COLUMN IF NOT EXISTS node_id              VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS node_name            VARCHAR(200),
+      ADD COLUMN IF NOT EXISTS lab_group            VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS node_type            VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS cert_alias           VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS cert_description     VARCHAR(200);
+    
+    CREATE INDEX IF NOT EXISTS idx_type_enable
+      ON monitored_system (system_type, is_enable);
+    
+    CREATE TABLE IF NOT EXISTS lab (
+        id           BIGSERIAL    PRIMARY KEY,
+        name         VARCHAR(100) NOT NULL UNIQUE,
+        display_name VARCHAR(200) NOT NULL,
+        description  VARCHAR(500),
+        is_enable    SMALLINT     DEFAULT 1,
+        created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+        updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    DROP TRIGGER IF EXISTS trg_lab_updated ON lab;
+    CREATE TRIGGER trg_lab_updated BEFORE UPDATE ON lab
+      FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+    
+    -- Seed lab with every distinct group already present in monitored_system,
+    -- so the dropdowns are populated and existing rows stay associated.
+    INSERT INTO lab (name, display_name)
+    SELECT DISTINCT g, g FROM (
+        SELECT system_group AS g FROM monitored_system WHERE system_group <> ''
+        UNION
+        SELECT lab_group    AS g FROM monitored_system WHERE lab_group IS NOT NULL AND lab_group <> ''
+    ) groups
+    WHERE g IS NOT NULL AND g <> ''
+    ON CONFLICT (name) DO NOTHING;
+  07-seed-systems.sql: |
+    -- Seed monitored_system + lab tables with DEMO data.
+    --
+    -- This file is loaded by docker-entrypoint-initdb.d on first Postgres startup
+    -- (empty data dir only). The admin UI on port 9119 is the long-term editor —
+    -- this seed exists so a fresh `docker-compose up -d` produces a UI with two
+    -- example labs and one example system per supported type, useful for poking
+    -- at the stack without configuring anything.
+    --
+    -- Two labs: demo-lab-a and demo-lab-b.
+    -- One example per type: HTTP, TCP, ICMP, SSL, LDAP, KEYCLOAK, DATABASE,
+    -- VERSION — repeated per lab → 16 rows total.
+    
+    -- Labs (the lab table is created in 06-extend-monitored-system.sql, which
+    -- runs before this file alphabetically — so the table exists by now).
+    INSERT INTO lab (name, display_name, description) VALUES
+      ('demo-lab-a', 'Demo Lab A — Primary',
+       'Open-source example lab. Replace with your real environment in the admin UI.'),
+      ('demo-lab-b', 'Demo Lab B — Secondary',
+       'Open-source example lab. Replace with your real environment in the admin UI.')
+    ON CONFLICT (name) DO NOTHING;
+    
+    INSERT INTO monitored_system
+      (system_id, display_name, system_group, system_type, url, blackbox_module,
+       realm_path, db_host, db_port, version_strategy,
+       node_id, node_name, lab_group, node_type,
+       cert_alias, cert_description, timeout_seconds)
+    VALUES
+      -- ---------------- Demo Lab A ----------------
+      ('demo-a-api',       'Demo Lab A — Sample API',        'demo-lab-a', 'HTTP',     'https://httpbin.org/status/200', 'http_2xx',    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
+      ('demo-a-tcp',       'Demo Lab A — Public DNS',        'demo-lab-a', 'TCP',      'dns.google:53',                  'tcp_connect', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5),
+      ('demo-a-node',      'Demo Lab A — Edge Node (ICMP)',  'demo-lab-a', 'ICMP',     '1.1.1.1',                         NULL,         NULL, NULL, NULL, NULL, 'demo-a-node', 'Demo Lab A — Edge Node', 'demo-lab-a', 'SERVER', NULL, NULL, 5),
+      ('ssl-demo-a',       'Demo Lab A — Web cert',          'demo-lab-a', 'SSL',      'github.com:443',                  NULL,         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'demo-a-cert', 'Demo Lab A — Web cert (github.com)', 30),
+      ('demo-a-ldap',      'Demo Lab A — Public LDAP',       'demo-lab-a', 'LDAP',     'ldap://ldap.forumsys.com:389',    NULL,         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
+      ('demo-a-keycloak',  'Demo Lab A — Keycloak (public demo)', 'demo-lab-a', 'KEYCLOAK', 'https://www.keycloak.org',    NULL,         '/',              NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
+      ('demo-a-mariadb',   'Demo Lab A — MySQL (bundled)',   'demo-lab-a', 'DATABASE', 'demo-mysql-target:3306',          NULL,         NULL, 'demo-mysql-target', 3306, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5),
+      ('ver-demo-a',       'Demo Lab A — App version',       'demo-lab-a', 'VERSION',  'https://petstore3.swagger.io/api/v3/openapi.json',         NULL,         NULL, NULL, NULL, 'openapi', NULL, NULL, NULL, NULL, NULL, NULL, 10),
+    
+      -- ---------------- Demo Lab B ----------------
+      ('demo-b-web',       'Demo Lab B — Grafana Play',      'demo-lab-b', 'HTTP',     'https://play.grafana.org/',       'http_2xx',    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
+      ('demo-b-tcp',       'Demo Lab B — Public DNS',        'demo-lab-b', 'TCP',      'one.one.one.one:53',              'tcp_connect', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5),
+      ('demo-b-node',      'Demo Lab B — Edge Node (ICMP)',  'demo-lab-b', 'ICMP',     '8.8.8.8',                         NULL,         NULL, NULL, NULL, NULL, 'demo-b-node', 'Demo Lab B — Edge Node', 'demo-lab-b', 'SERVER', NULL, NULL, 5),
+      ('ssl-demo-b',       'Demo Lab B — Web cert',          'demo-lab-b', 'SSL',      'github.com:443',                  NULL,         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'demo-b-cert', 'Demo Lab B — Web cert', 30),
+      ('demo-b-ldap',      'Demo Lab B — Public LDAP',       'demo-lab-b', 'LDAP',     'ldap://ldap.forumsys.com:389',    NULL,         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
+      ('demo-b-keycloak',  'Demo Lab B — Keycloak (public demo)', 'demo-lab-b', 'KEYCLOAK', 'https://www.keycloak.org',    NULL,         '/',              NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10),
+      ('demo-b-mariadb',   'Demo Lab B — MySQL (bundled)',   'demo-lab-b', 'DATABASE', 'demo-mysql-target:3306',          NULL,         NULL, 'demo-mysql-target', 3306, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5),
+      ('ver-demo-b',       'Demo Lab B — App version',       'demo-lab-b', 'VERSION',  'https://petstore3.swagger.io/api/v3/openapi.json',         NULL,         NULL, NULL, NULL, 'openapi', NULL, NULL, NULL, NULL, NULL, NULL, 10),
+
+      -- ---------------- SSL negative tests (badssl.com) ----------------
+      -- Intentionally broken so SSL expiry / chain alerting can be observed.
+      ('ssl-demo-expired',    'SSL negative — expired cert',     'demo-lab-a', 'SSL', 'expired.badssl.com:443',      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'badssl-expired',    'expired.badssl.com (intentional negative test)',    30),
+      ('ssl-demo-selfsigned', 'SSL negative — self-signed',      'demo-lab-b', 'SSL', 'self-signed.badssl.com:443',  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'badssl-selfsigned', 'self-signed.badssl.com (intentional negative test)', 30)
+    ON CONFLICT (system_id) DO UPDATE SET
+      display_name = EXCLUDED.display_name,
+      system_group = EXCLUDED.system_group,
+      system_type  = EXCLUDED.system_type,
+      url          = EXCLUDED.url;
+  08-datasource-and-new-types.sql: |
+    -- 08-datasource-and-new-types.sql (Postgres dialect)
+    --
+    -- Adds the `datasource` table — Grafana data-source catalog editable from
+    -- the admin UI. A background sync (datasource_sync.py) reconciles this
+    -- table against Grafana's /api/datasources every cycle so adding a row
+    -- here makes the datasource appear in Grafana without any provisioning
+    -- file edits.
+    
+    CREATE TABLE IF NOT EXISTS datasource (
+        id            BIGSERIAL    PRIMARY KEY,
+        name          VARCHAR(100) NOT NULL UNIQUE,
+        display_name  VARCHAR(200) NOT NULL,
+        type          VARCHAR(50)  NOT NULL,
+        url           VARCHAR(500) NOT NULL,
+        database_name VARCHAR(200),
+        db_user       VARCHAR(100),
+        -- Convention: store an env-var name here, not the secret itself.
+        password_env  VARCHAR(100),
+        lab_group     VARCHAR(100),
+        is_enable     SMALLINT     DEFAULT 1,
+        created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+        updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_datasource_type ON datasource (type);
+    
+    DROP TRIGGER IF EXISTS trg_datasource_updated ON datasource;
+    CREATE TRIGGER trg_datasource_updated BEFORE UPDATE ON datasource
+      FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+  09-seed-new-types-and-datasources.sql: |
+    -- 09-seed-new-types-and-datasources.sql
+    --
+    -- Demo entries for the new probe types added in 08:
+    --   POSTGRES, REDIS, MONGODB, ELASTICSEARCH, GRPC, DNS
+    -- One per demo lab so the admin UI shows working examples.
+    --
+    -- Also seeds a few example Grafana datasources for the DB Observability
+    -- dashboard so the variable dropdown isn't empty on first boot.
+    
+    INSERT INTO monitored_system
+      (system_id, display_name, system_group, system_type, url, blackbox_module,
+       db_host, db_port,
+       timeout_seconds)
+    VALUES
+      -- Lab A points at REAL bundled demo-target containers (enabled via
+      -- demoTargets.enabled=true in values.yaml). These probes return UP
+      -- when the demo-targets.yaml template has rendered the Deployments.
+      ('demo-a-postgres', 'Demo Lab A — Postgres (bundled)',     'demo-lab-a', 'POSTGRES',      'demo-postgres-target:5432',     NULL,           'demo-postgres-target', 5432, 5),
+      ('demo-a-redis',    'Demo Lab A — Redis (bundled)',        'demo-lab-a', 'REDIS',         'demo-redis-target:6379',        NULL,           'demo-redis-target',    6379, 5),
+      ('demo-a-mongo',    'Demo Lab A — MongoDB (bundled)',      'demo-lab-a', 'MONGODB',       'demo-mongo-target:27017',       NULL,           'demo-mongo-target',   27017, 5),
+      ('demo-a-es',       'Demo Lab A — Elasticsearch (bundled)','demo-lab-a', 'ELASTICSEARCH', 'http://demo-es-target:9200/',   NULL,           NULL,                   NULL, 10),
+      -- Lab B also points at the bundled containers — both labs probe real
+      -- services. Alerting demo is driven by the SSL negative tests instead
+      -- of placeholder DOWN rows.
+      ('demo-b-postgres', 'Demo Lab B — Postgres (bundled)',     'demo-lab-b', 'POSTGRES',      'demo-postgres-target:5432',     NULL,           'demo-postgres-target', 5432, 5),
+      ('demo-b-redis',    'Demo Lab B — Redis (bundled)',        'demo-lab-b', 'REDIS',         'demo-redis-target:6379',        NULL,           'demo-redis-target',    6379, 5),
+      ('demo-b-mongo',    'Demo Lab B — MongoDB (bundled)',      'demo-lab-b', 'MONGODB',       'demo-mongo-target:27017',       NULL,           'demo-mongo-target',   27017, 5),
+      ('demo-b-es',       'Demo Lab B — Elasticsearch (bundled)','demo-lab-b', 'ELASTICSEARCH', 'http://demo-es-target:9200/',   NULL,           NULL,                   NULL, 10),
+      ('demo-a-grpc',     'Demo Lab A — gRPC echo',  'demo-lab-a', 'GRPC',          'grpcb.in:9001',                   'grpc_plain', NULL,        NULL, 10),
+      ('demo-b-grpc',     'Demo Lab B — gRPC echo',  'demo-lab-b', 'GRPC',          'grpcb.in:9001',                   'grpc_plain', NULL,        NULL, 10),
+      ('demo-a-dns',      'Demo Lab A — DNS resolver','demo-lab-a', 'DNS',           '1.1.1.1',                       'dns_udp',      NULL,        NULL, 5),
+      ('demo-b-dns',      'Demo Lab B — DNS resolver','demo-lab-b', 'DNS',           '8.8.8.8',                       'dns_udp',      NULL,        NULL, 5)
+    ON CONFLICT (system_id) DO UPDATE SET
+      display_name = EXCLUDED.display_name,
+      system_group = EXCLUDED.system_group,
+      url          = EXCLUDED.url;
+    
+    -- Demo Grafana datasources. The DB Observability dashboard variable lists
+    -- entries from this table; admin UI /admin/datasources is the editor; the
+    -- exporter's datasource_sync thread reconciles them into Grafana via the
+    -- HTTP API on each cycle.
+    INSERT INTO datasource
+      (name, display_name, type, url, database_name, db_user, password_env, lab_group)
+    VALUES
+      ('monitor-postgres-demo-a','Postgres — Demo Lab A','postgres', 'pg.demo-lab-a.example.com:5432', 'app',  'monitor_ro', 'GF_DS_POSTGRES_DEMO_A_PASSWORD',  'demo-lab-a'),
+      ('monitor-postgres-demo-b','Postgres — Demo Lab B','postgres', 'pg.demo-lab-b.example.com:5432', 'app',  'monitor_ro', 'GF_DS_POSTGRES_DEMO_B_PASSWORD',  'demo-lab-b'),
+      ('monitor-mysql-demo-a',   'MySQL — Demo Lab A',   'mysql',    'mysql.demo-lab-a.example.com:3306', 'app',  'monitor_ro', 'GF_DS_MYSQL_DEMO_A_PASSWORD',     'demo-lab-a'),
+      ('monitor-mysql-demo-b',   'MySQL — Demo Lab B',   'mysql',    'mysql.demo-lab-b.example.com:3306', 'app',  'monitor_ro', 'GF_DS_MYSQL_DEMO_B_PASSWORD',     'demo-lab-b')
+    ON CONFLICT (name) DO NOTHING;
+  10-seed-demo-history.sql: |
+    -- 10-seed-demo-history.sql (Postgres dialect)
+    --
+    -- Backfills synthetic history so the dashboards have something to render on
+    -- first boot (otherwise every "Recent …", "Trends", "Last 7d uptime" panel
+    -- shows "No data").
+    --
+    -- NOT idempotent: the INSERTs do not carry ON CONFLICT clauses because the
+    -- timestamps are synthetic. Re-running on a populated DB will duplicate every
+    -- row. Postgres only runs scripts in /docker-entrypoint-initdb.d/ on FIRST
+    -- container start (empty data dir), so this is safe in normal docker-compose
+    -- usage. If you ever need to re-seed: `docker compose down -v` first.
+    
+    -- ============================================================================
+    -- 1. Health check history (7 days × 30-min cadence × N systems)
+    -- ============================================================================
+    INSERT INTO health_check_history (system_id, check_timestamp, status, http_status_code, response_time_ms, error_message)
+    WITH RECURSIVE offsets AS (
+        SELECT 0 AS n
+        UNION ALL
+        SELECT n + 1 FROM offsets WHERE n < 335
+    )
+    SELECT
+        s.id,
+        NOW() - make_interval(mins => o.n * 30) AS check_timestamp,
+        CASE WHEN (s.id * 7 + o.n) % 47 IN (0, 1) THEN 'DOWN' ELSE 'UP' END AS status,
+        CASE
+            WHEN (s.id * 7 + o.n) % 47 IN (0, 1) THEN 503
+            WHEN s.system_type IN ('HTTP', 'KEYCLOAK', 'ELASTICSEARCH') THEN 200
+            ELSE NULL
+        END AS http_status_code,
+        GREATEST(1, ROUND(50 + ((s.id * 17 + o.n) % 300))::int) AS response_time_ms,
+        CASE WHEN (s.id * 7 + o.n) % 47 IN (0, 1)
+             THEN 'demo: connection timed out'
+             ELSE NULL
+        END AS error_message
+    FROM monitored_system s
+    CROSS JOIN offsets o
+    WHERE s.is_enable = 1;
+    
+    
+    -- ============================================================================
+    -- 2. alert_state — one row per system showing its current status
+    -- ============================================================================
+    INSERT INTO alert_state (system_id, current_status, current_severity, down_since, alert_count)
+    SELECT
+        s.id,
+        CASE
+            WHEN s.system_id IN ('demo-a-mariadb', 'demo-b-mongo') THEN 'DOWN'
+            ELSE 'UP'
+        END AS current_status,
+        CASE
+            WHEN s.system_id = 'demo-a-mariadb' THEN 'CRITICAL'
+            WHEN s.system_id = 'demo-b-mongo'   THEN 'WARNING'
+            ELSE NULL
+        END AS current_severity,
+        CASE
+            WHEN s.system_id = 'demo-a-mariadb' THEN NOW() - INTERVAL '2 hours'
+            WHEN s.system_id = 'demo-b-mongo'   THEN NOW() - INTERVAL '15 minutes'
+            ELSE NULL
+        END AS down_since,
+        CASE
+            WHEN s.system_id = 'demo-a-mariadb' THEN 3
+            WHEN s.system_id = 'demo-b-mongo'   THEN 1
+            ELSE 0
+        END AS alert_count
+    FROM monitored_system s
+    WHERE s.is_enable = 1;
+    
+    
+    -- ============================================================================
+    -- 3. email_log — last 5 alert emails
+    -- ============================================================================
+    INSERT INTO email_log (related_system_id, sent_timestamp, subject, to_recipients, email_type, status) VALUES
+        ((SELECT id FROM monitored_system WHERE system_id = 'demo-a-mariadb'),
+         NOW() - INTERVAL '5 minutes',
+         '[FIRING] [CRITICAL] Demo Lab A - MariaDB - demo-lab-a',
+         'alerts@example.com', 'alert', 'SENT'),
+        ((SELECT id FROM monitored_system WHERE system_id = 'demo-a-mariadb'),
+         NOW() - INTERVAL '65 minutes',
+         '[FIRING] [WARNING] Demo Lab A - MariaDB - demo-lab-a',
+         'alerts@example.com', 'alert', 'SENT'),
+        ((SELECT id FROM monitored_system WHERE system_id = 'demo-b-mongo'),
+         NOW() - INTERVAL '10 minutes',
+         '[FIRING] [WARNING] Demo Lab B - MongoDB - demo-lab-b',
+         'alerts@example.com', 'alert', 'SENT'),
+        (NULL,
+         NOW() - INTERVAL '6 hours',
+         '[RESOLVED] Demo Lab A - Sample API - demo-lab-a',
+         'alerts@example.com', 'resolution', 'SENT'),
+        (NULL,
+         NOW() - INTERVAL '1 day',
+         '[FIRING] [WARNING] Demo Lab B - Edge Node (ICMP) - demo-lab-b',
+         'alerts@example.com', 'alert', 'SENT');
+    
+    
+    -- ============================================================================
+    -- 4. maintenance_window — 1 active + 2 upcoming entries
+    -- ============================================================================
+    WITH inserted_windows AS (
+        INSERT INTO maintenance_window (title, maintenance_type, start_time, end_time)
+        VALUES
+          ('Postgres minor version upgrade', 'scheduled',
+           NOW() - INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes'),
+          ('Quarterly OS patching — Demo Lab A', 'scheduled',
+           NOW() + INTERVAL '2 days',  NOW() + INTERVAL '2 days 4 hours'),
+          ('Certificate rotation — Demo Lab B', 'scheduled',
+           NOW() + INTERVAL '5 days',  NOW() + INTERVAL '5 days 2 hours')
+        RETURNING id, title
+    )
+    -- Link each window to the relevant systems (active=mariadb sample, others=spread across the lab)
+    INSERT INTO maintenance_window_system (maintenance_window_id, system_id)
+    SELECT w.id, ms.id
+    FROM inserted_windows w
+    JOIN monitored_system ms ON
+      (w.title = 'Postgres minor version upgrade' AND ms.system_id IN ('demo-a-mariadb','demo-a-postgres')) OR
+      (w.title = 'Quarterly OS patching — Demo Lab A' AND ms.system_group = 'demo-lab-a') OR
+      (w.title = 'Certificate rotation — Demo Lab B' AND ms.system_id IN ('ssl-demo-b','demo-b-web'));
+    
+    
+    
+    
+    
+    -- ============================================================================
+    -- Sanity counts
+    -- ============================================================================
+    SELECT 'health_check_history' AS tbl, COUNT(*) AS rows_inserted FROM health_check_history
+    UNION ALL SELECT 'alert_state',    COUNT(*) FROM alert_state
+    UNION ALL SELECT 'email_log',      COUNT(*) FROM email_log
+    UNION ALL SELECT 'maintenance_window', COUNT(*) FROM maintenance_window

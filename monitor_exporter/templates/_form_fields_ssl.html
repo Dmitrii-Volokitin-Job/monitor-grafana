@@ -1,0 +1,17 @@
+<div class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">Target (host:port) *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="example.com:443">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Cert alias *</label>
+    <input class="form-control" name="cert_alias" required value="{{ row.cert_alias or '' }}"
+           placeholder="my-cert-alias">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Cert description</label>
+    <input class="form-control" name="cert_description" value="{{ row.cert_description or '' }}"
+           placeholder="Production wildcard cert (renewed via Let's Encrypt)">
+  </div>
+</div>

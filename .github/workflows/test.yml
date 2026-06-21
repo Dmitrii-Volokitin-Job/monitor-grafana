@@ -1,0 +1,66 @@
+name: tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r monitor_exporter/requirements.txt
+          pip install -r requirements-test.txt
+
+      - name: Run unit tests
+        run: pytest tests/unit -v
+
+      - name: Run dashboard validators
+        run: pytest tests/dashboards -v
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: 'v3.15.0'
+
+      - name: helm lint
+        run: |
+          helm lint deployments/k8s-helm/dev/monitor-grafana/ \
+            --values deployments/k8s-helm/dev/monitor-grafana/values.yaml
+
+      - name: helm template (render check)
+        run: |
+          helm template test deployments/k8s-helm/dev/monitor-grafana/ \
+            --values deployments/k8s-helm/dev/monitor-grafana/values.yaml \
+            > /dev/null
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build exporter image
+        run: |
+          docker build \
+            -t monitor-exporter:ci \
+            -f docker/Dockerfile.monitor-exporter .
+
+      - name: Build smtp-to-graph image
+        run: |
+          if [ -f smtp_to_graph/Dockerfile ]; then
+            docker build -t smtp-to-graph:ci -f smtp_to_graph/Dockerfile smtp_to_graph/
+          fi

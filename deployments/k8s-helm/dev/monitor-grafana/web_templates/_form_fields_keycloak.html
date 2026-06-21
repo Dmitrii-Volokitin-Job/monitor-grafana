@@ -1,0 +1,13 @@
+<div class="row g-3">
+  <div class="col-md-7">
+    <label class="form-label">Base URL *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="https://keycloak.example.com">
+    <div class="form-text">Scheme + host (+ port). Realm path appended at probe time.</div>
+  </div>
+  <div class="col-md-5">
+    <label class="form-label">Realm path *</label>
+    <input class="form-control" name="realm_path" required value="{{ row.realm_path or '/auth/realms/master' }}">
+    <div class="form-text"><code>/auth/realms/master</code> on Keycloak ≤17; <code>/realms/&lt;name&gt;</code> on newer versions.</div>
+  </div>
+</div>

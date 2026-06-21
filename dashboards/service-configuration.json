@@ -1,0 +1,121 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": ["monitor"],
+      "title": "Monitor Dashboards",
+      "type": "dashboards"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "title": "Open Admin UI (full screen)",
+      "tooltip": "Opens the admin UI in a new tab — recommended for editing rows.",
+      "type": "link",
+      "url": "http://localhost:9119/admin/",
+      "targetBlank": true
+    }
+  ],
+  "panels": [
+    {
+      "type": "text",
+      "id": 1,
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "title": "",
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "### How to edit a service\n\n**The live table below reads directly from Postgres.** Each row's `system_id` is a clickable deep link to the edit form in the admin UI — click it, change any field (URL, blackbox module, lab, type-specific params), Save, and the new value is written to the `monitored_system` table immediately. Prometheus picks up the change within 30 s via HTTP-SD.\n\n**Tip:** for a full-width edit experience click **Open Admin UI (full screen)** in the dashboard menu (top-right)."
+      }
+    },
+    {
+      "type": "table",
+      "id": 2,
+      "title": "Monitored Systems — live from Postgres",
+      "datasource": { "type": "postgres", "uid": "monitor-postgres" },
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 3 },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "show": false, "reducer": ["count"], "fields": "" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "filterable": true,
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "System ID" },
+            "properties": [
+              {
+                "id": "links",
+                "value": [{
+                  "title": "Edit ${__data.fields[\"System ID\"]} in the admin UI",
+                  "url": "http://localhost:9119/admin/systems/${__data.fields[\"DB ID\"]}/edit",
+                  "targetBlank": true
+                }]
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Enabled" },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "1": { "text": "✓ on", "color": "green" }, "0": { "text": "off", "color": "red" } } }
+                ]
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "DB ID" },
+            "properties": [ { "id": "custom.hidden", "value": true } ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "monitor-postgres" },
+          "format": "table",
+          "rawSql": "SELECT\n  id            AS \"DB ID\",\n  system_id     AS \"System ID\",\n  display_name  AS \"Display Name\",\n  system_type   AS \"Type\",\n  system_group  AS \"Lab\",\n  url           AS \"URL\",\n  COALESCE(blackbox_module, version_strategy, '—') AS \"Module / Strategy\",\n  is_enable     AS \"Enabled\",\n  to_char(updated_at, 'YYYY-MM-DD HH24:MI') AS \"Last edited\"\nFROM monitored_system\nORDER BY system_group, system_type, system_id"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": 3,
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 17 },
+      "title": "Admin UI — Systems / Labs / Datasources",
+      "options": {
+        "mode": "markdown",
+        "content": "### Opening the Admin UI\n\nThe admin UI runs as a sibling service on **port 9119** (separate origin from Grafana, so it cannot be safely embedded as an iframe here without breaking the Grafana session cookie). Open it in a new tab:\n\n→ **[http://localhost:9119/admin/](http://localhost:9119/admin/)** (local docker-compose)  \n→ For K8s installs the URL is wherever you point your `monitor-exporter` ingress.\n\n**Auth:** the admin UI validates the Grafana session cookie — you need to be logged into Grafana in the same browser first. The full-page admin UI exposes:\n\n- `Systems` — CRUD on `monitored_system` rows (every row in the table above)\n- `Labs` — CRUD on `lab` rows (drives the `system_group` dropdowns on every dashboard)\n- `Datasources` — CRUD on the `datasource` table (synced to Grafana every 60 s by `datasource_sync`)\n\nWhen you create/edit/delete a row, Prometheus picks up the change via HTTP-SD within ~30 s. No YAML edits, no pod restarts."
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["monitor", "admin"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "title": "Service Configuration",
+  "uid": "monitor-service-config",
+  "refresh": "10s",
+  "version": 3
+}

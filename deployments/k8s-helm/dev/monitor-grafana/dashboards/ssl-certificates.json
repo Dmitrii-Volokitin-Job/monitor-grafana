@@ -1,0 +1,1347 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Alert Events",
+        "type": "alert_states"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "monitor"
+      ],
+      "title": "Monitor Dashboards",
+      "type": "dashboards"
+    },
+    {
+      "asDropdown": false,
+      "icon": "bolt",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "title": "Reset Filters",
+      "type": "link",
+      "url": "/d/monitor-ssl-certs/ssl-certificate-status?var-system_group=All",
+      "targetBlank": false
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "title": "Certificate Expiry Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "semi-dark-blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-blue",
+                "value": null
+              }
+            ]
+          },
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Total Certificates",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "count(probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"})",
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "semi-dark-green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Valid (>30d)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "count((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400 > 30) or vector(0)",
+          "legendFormat": "Valid",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "semi-dark-orange"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-orange",
+                "value": null
+              }
+            ]
+          },
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Expiring (<30d)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "count((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400 > 0 and (probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400 < 30) or vector(0)",
+          "legendFormat": "Expiring",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "semi-dark-red"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              }
+            ]
+          },
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Expired",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "count((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) <= 0) or vector(0)",
+          "legendFormat": "Expired",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 7
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 30
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0,
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Next Expiry (days)",
+      "description": "The minimum number of days until any certificate expires",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "min((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400)",
+          "legendFormat": "Soonest",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 7
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 30
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "dateTimeAsIso",
+          "decimals": 0,
+          "custom": {}
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "min"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        },
+        "justifyMode": "auto"
+      },
+      "title": "Earliest Expiry Date",
+      "description": "The actual date of the earliest certificate expiry",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "min(probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"}) * 1000",
+          "legendFormat": "Date",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 108,
+      "title": "Certificates Requiring Attention",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Days Left"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-red",
+                      "value": null
+                    },
+                    {
+                      "color": "semi-dark-orange",
+                      "value": 7
+                    },
+                    {
+                      "color": "semi-dark-yellow",
+                      "value": 30
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Expires On"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Urgency"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "from": -999999,
+                      "to": 0,
+                      "result": {
+                        "color": "semi-dark-red",
+                        "text": "EXPIRED"
+                      }
+                    },
+                    "type": "range"
+                  },
+                  {
+                    "options": {
+                      "from": 0.001,
+                      "to": 7,
+                      "result": {
+                        "color": "semi-dark-red",
+                        "text": "CRITICAL"
+                      }
+                    },
+                    "type": "range"
+                  },
+                  {
+                    "options": {
+                      "from": 7.001,
+                      "to": 30,
+                      "result": {
+                        "color": "semi-dark-orange",
+                        "text": "WARNING"
+                      }
+                    },
+                    "type": "range"
+                  },
+                  {
+                    "options": {
+                      "from": 30.001,
+                      "to": 999999,
+                      "result": {
+                        "color": "semi-dark-green",
+                        "text": "OK"
+                      }
+                    },
+                    "type": "range"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 25,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Days Left"
+          }
+        ]
+      },
+      "title": "Certificates Expiring Within 90 Days or Expired",
+      "description": "Certs expiring within 90 days. Below 30 \u2192 urgent, below 7 \u2192 critical.",
+      "type": "table",
+      "links": [
+        {
+          "title": "Back to System Health Overview",
+          "url": "/d/monitor-health-overview/system-health-overview?${__url_time_range}&${__all_variables}",
+          "targetBlank": false
+        }
+      ],
+      "targets": [
+        {
+          "expr": "(probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400 < 90",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} * ((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400 < 90)",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "byField": "instance"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time 1": true,
+              "Time 2": true,
+              "__name__ 1": true,
+              "__name__ 2": true,
+              "job 1": true,
+              "job 2": true,
+              "display_name 2": true,
+              "system_id 2": true
+            },
+            "renameByName": {
+              "system_id 1": "ID",
+              "display_name 1": "System",
+              "instance": "Host:Port",
+              "Value #A": "Days Left",
+              "Value #B": "Expires On"
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Urgency",
+            "mode": "reduceRow",
+            "reduce": {
+              "reducer": "min",
+              "include": [
+                "Days Left"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 101,
+      "title": "Days Until Expiry - All Certificates",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 7
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 30
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0,
+          "min": 0,
+          "custom": {
+            "text": {
+              "valueSize": 18,
+              "titleSize": 13
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 10,
+      "options": {
+        "displayMode": "lcd",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {
+          "valueSize": 18,
+          "titleSize": 12
+        }
+      },
+      "title": "Days Until Certificate Expiry (sorted ascending)",
+      "type": "bargauge",
+      "targets": [
+        {
+          "expr": "sort((probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400)",
+          "legendFormat": "{{display_name}} ({{instance}})",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 109,
+      "title": "Certificate Expiry Timeline",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Days Until Expiry",
+            "drawStyle": "points",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "lineWidth": 0,
+            "pointSize": 12,
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-red",
+                "value": null
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 7
+              },
+              {
+                "color": "semi-dark-yellow",
+                "value": 30
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 60
+              }
+            ]
+          },
+          "unit": "short",
+          "decimals": 0,
+          "min": 0
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 35,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "sortBy": "Last *",
+          "sortDesc": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Certificate Expiry Countdown Over Time",
+      "description": "Track how days-until-expiry decreases over time for each certificate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "(probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400",
+          "legendFormat": "{{display_name}} ({{instance}})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 110,
+      "title": "TLS & Certificate Details",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TLS Version"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "pattern": ".*1\\.3.*",
+                      "result": {
+                        "color": "semi-dark-green",
+                        "text": "TLS 1.3"
+                      }
+                    },
+                    "type": "regex"
+                  },
+                  {
+                    "options": {
+                      "pattern": ".*1\\.2.*",
+                      "result": {
+                        "color": "semi-dark-yellow",
+                        "text": "TLS 1.2"
+                      }
+                    },
+                    "type": "regex"
+                  },
+                  {
+                    "options": {
+                      "pattern": ".*1\\.1.*",
+                      "result": {
+                        "color": "semi-dark-orange",
+                        "text": "TLS 1.1 (deprecated)"
+                      }
+                    },
+                    "type": "regex"
+                  },
+                  {
+                    "options": {
+                      "pattern": ".*1\\.0.*",
+                      "result": {
+                        "color": "semi-dark-red",
+                        "text": "TLS 1.0 (insecure)"
+                      }
+                    },
+                    "type": "regex"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Probe OK"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "semi-dark-red",
+                        "text": "FAIL"
+                      },
+                      "1": {
+                        "color": "semi-dark-green",
+                        "text": "OK"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "id": 30,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Host:Port"
+          }
+        ]
+      },
+      "title": "TLS Version & Probe Status",
+      "description": "Shows TLS version negotiated for each endpoint and whether the SSL probe succeeded",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "probe_tls_version_info{job=\"blackbox_http\", system_group=~\"$system_group\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "probe_success{job=\"blackbox_http\", system_group=~\"$system_group\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "byField": "instance"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time 1": true,
+              "Time 2": true,
+              "__name__ 1": true,
+              "__name__ 2": true,
+              "job 1": true,
+              "job 2": true,
+              "Value #A": true,
+              "system_id 2": true,
+              "display_name 2": true
+            },
+            "renameByName": {
+              "instance": "Host:Port",
+              "system_id 1": "ID",
+              "display_name 1": "System",
+              "version 1": "TLS Version",
+              "Value #B": "Probe OK"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "id": 102,
+      "title": "Full Certificate Details",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "monitor-prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Days Left"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-red",
+                      "value": null
+                    },
+                    {
+                      "color": "semi-dark-orange",
+                      "value": 7
+                    },
+                    {
+                      "color": "semi-dark-yellow",
+                      "value": 30
+                    },
+                    {
+                      "color": "semi-dark-green",
+                      "value": 60
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Expires On"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Issued On"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Issuer"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 250
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 20,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Days Left"
+          }
+        ]
+      },
+      "title": "All SSL Certificates - Full Details",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "(probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} - time()) / 86400",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} * 1000",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "probe_ssl_earliest_cert_expiry{job=\"blackbox_http\", system_group=~\"$system_group\"} * 1000",
+          "format": "table",
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "probe_tls_version_info{job=\"blackbox_http\", system_group=~\"$system_group\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "D"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "byField": "instance"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true,
+              "Time 4": true,
+              "__name__ 1": true,
+              "__name__ 2": true,
+              "__name__ 3": true,
+              "__name__ 4": true,
+              "job 1": true,
+              "job 2": true,
+              "job 3": true,
+              "job 4": true,
+              "display_name 2": true,
+              "system_id 2": true,
+              "display_name 3": true,
+              "system_id 3": true,
+              "display_name 4": true,
+              "cert_alias 4": true,
+              "Value #D": true
+            },
+            "renameByName": {
+              "system_id 1": "ID",
+              "display_name 1": "System",
+              "instance": "Host:Port",
+              "Value #A": "Days Left",
+              "Value #B": "Expires On",
+              "Value #C": "Issued On",
+              "issuer 4": "Issuer"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "certificates",
+    "monitor",
+    "ssl"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "monitor-postgres"
+        },
+        "definition": "SELECT name AS __value, COALESCE(display_name, name) AS __text FROM lab WHERE is_enable = 1 ORDER BY name",
+        "includeAll": true,
+        "multi": true,
+        "name": "system_group",
+        "query": "SELECT name AS __value, COALESCE(display_name, name) AS __text FROM lab WHERE is_enable = 1 ORDER BY name",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query",
+        "label": "Environment Group",
+        "allValue": ".*"
+      },
+      {
+        "hide": 2,
+        "name": "DS_PROMETHEUS",
+        "query": "Prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "SSL Certificate Status",
+  "uid": "monitor-ssl-certs",
+  "version": 1
+}

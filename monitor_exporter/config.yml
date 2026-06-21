@@ -1,0 +1,100 @@
+# Monitor Exporter configuration — DEMO data.
+#
+# Runtime process settings (port, interval, Postgres connection, pollers for
+# GitLab CI / SonarQube / e2e trigger / sonar exporter). The target catalog
+# itself lives in the `monitored_system` DB table; edit it via the admin UI on
+# port 9119, not here. The legacy *_targets sections below are kept only as
+# fallback seed input — they are NOT read at runtime.
+
+exporter:
+  port: 9116
+  check_interval_seconds: 300
+
+# Internal metadata DB. POSTGRES_* env vars override these values at runtime
+# (see monitor_exporter/db.py).
+postgres:
+  enabled: true
+  host: localhost
+  port: 5432
+  database: monitoring
+  user: monitoring
+  # Password intentionally left blank — pass it via POSTGRES_PASSWORD env var
+  # (docker-compose.yml does this from .env; helm chart from a Secret). Never
+  # commit a real password here.
+  password: ""
+  retention_days: 90
+  cleanup_interval_hours: 24
+
+prometheus:
+  url: http://127.0.0.1:9090
+
+# Optional pollers — disable any you don't need.
+
+# ----------------------------------------------------------------------------
+# Demo seed data for the four custom-check types (LDAP / Keycloak / Database /
+# Version). Two labs, one example per type per lab.
+# ----------------------------------------------------------------------------
+
+ldap_targets:
+  - system_id: demo-a-ldap
+    display_name: "Demo Lab A — Public LDAP"
+    system_group: demo-lab-a
+    url: ldap://ldap.forumsys.com:389
+    timeout_seconds: 10
+
+  - system_id: demo-b-ldap
+    display_name: "Demo Lab B — Public LDAP"
+    system_group: demo-lab-b
+    url: ldap://ldap.forumsys.com:389
+    timeout_seconds: 10
+
+keycloak_targets:
+  # Public Keycloak project site — matches the SQL seed in 07-seed-systems.sql.
+  - system_id: demo-a-keycloak
+    display_name: "Demo Lab A — Keycloak (public demo)"
+    system_group: demo-lab-a
+    base_url: https://www.keycloak.org
+    realm_path: /
+    timeout_seconds: 10
+
+  - system_id: demo-b-keycloak
+    display_name: "Demo Lab B — Keycloak (public demo)"
+    system_group: demo-lab-b
+    base_url: https://www.keycloak.org
+    realm_path: /
+    timeout_seconds: 10
+
+database_targets:
+  # Lab A points at the REAL bundled `demo-mysql-target` container started
+  # via `COMPOSE_PROFILES=full docker compose up -d` (or via Helm chart
+  # values demoTargets.enabled=true). Returns UP when the full profile runs.
+  - system_id: demo-a-mariadb
+    display_name: "Demo Lab A — MySQL (bundled)"
+    system_group: demo-lab-a
+    host: demo-mysql-target
+    port: 3306
+    timeout_seconds: 5
+
+  # Lab B also points at the bundled MySQL container — every example probes
+  # a real service. Alerting demo is driven by the SSL negative tests.
+  - system_id: demo-b-mariadb
+    display_name: "Demo Lab B — MySQL (bundled)"
+    system_group: demo-lab-b
+    host: demo-mysql-target
+    port: 3306
+    timeout_seconds: 5
+
+version_targets:
+  - system_id: demo-a-version
+    display_name: "Demo Lab A — Spring Boot info endpoint"
+    system_group: demo-lab-a
+    url: https://httpbin.org/get
+    strategy: openapi   # OpenAPI works as a benign demo
+    timeout_seconds: 10
+
+  - system_id: demo-b-version
+    display_name: "Demo Lab B — Spring Boot info endpoint"
+    system_group: demo-lab-b
+    url: https://httpbin.org/get
+    strategy: openapi
+    timeout_seconds: 10

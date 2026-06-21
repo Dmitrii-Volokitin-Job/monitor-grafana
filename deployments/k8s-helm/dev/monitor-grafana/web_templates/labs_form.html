@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% set is_edit = (mode == 'edit') %}
+{% block title %}{{ 'Edit' if is_edit else 'New' }} lab{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">{{ 'Edit lab' if is_edit else 'New lab' }}</h3>
+
+<form method="post" class="card p-3"
+      action="{{ url_for('admin_ui.labs_update', pk=lab.id) if is_edit else url_for('admin_ui.labs_create') }}">
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <label class="form-label">Name (key) *</label>
+      <input class="form-control" name="name" required
+             value="{{ lab.name or '' }}"
+             {% if is_edit %}readonly{% endif %}
+             placeholder="demo-lab-a">
+      <div class="form-text">Stable identifier. Used as <code>system_group</code> on monitored systems.</div>
+    </div>
+    <div class="col-md-8">
+      <label class="form-label">Display name *</label>
+      <input class="form-control" name="display_name" required
+             value="{{ lab.display_name or '' }}"
+             placeholder="Demo Lab A">
+    </div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Description</label>
+    <textarea class="form-control" name="description" rows="2">{{ lab.description or '' }}</textarea>
+  </div>
+  {% if is_edit %}
+  <div class="mb-3">
+    <label class="form-label">Enabled</label>
+    <select class="form-select" name="is_enable">
+      <option value="1" {% if lab.is_enable %}selected{% endif %}>Enabled</option>
+      <option value="0" {% if not lab.is_enable %}selected{% endif %}>Disabled (hidden from dashboards)</option>
+    </select>
+  </div>
+  {% endif %}
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary">{{ 'Save' if is_edit else 'Create' }}</button>
+    <a class="btn btn-outline-light" href="{{ url_for('admin_ui.labs_index') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

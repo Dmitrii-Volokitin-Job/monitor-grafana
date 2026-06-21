@@ -1,0 +1,38 @@
+<tr id="system-row-{{ r.id }}">
+  <td>
+    <strong>{{ r.display_name or r.system_id }}</strong><br>
+    <small class="text-secondary">{{ r.system_id }}</small>
+  </td>
+  <td><span class="badge bg-secondary">{{ r.system_group or r.lab_group or '—' }}</span></td>
+  <td><span class="badge bg-info text-dark">{{ r.system_type }}</span></td>
+  <td class="text-truncate" style="max-width: 360px;" title="{{ r.url or '' }}">
+    {{ r.url or '—' }}
+  </td>
+  <td>
+    {% if r.blackbox_module %}<code>{{ r.blackbox_module }}</code>{% endif %}
+    {% if r.version_strategy %}<code>{{ r.version_strategy }}</code>{% endif %}
+    {% if not r.blackbox_module and not r.version_strategy %}—{% endif %}
+  </td>
+  <td>
+    {% if r.is_enable %}
+      <form method="post" action="{{ url_for('admin_ui.disable', pk=r.id) }}"
+            hx-post="{{ url_for('admin_ui.disable', pk=r.id) }}"
+            hx-target="#system-row-{{ r.id }}" hx-swap="outerHTML">
+        <button class="btn btn-sm btn-success" title="Click to disable">on</button>
+      </form>
+    {% else %}
+      <form method="post" action="{{ url_for('admin_ui.enable', pk=r.id) }}"
+            hx-post="{{ url_for('admin_ui.enable', pk=r.id) }}"
+            hx-target="#system-row-{{ r.id }}" hx-swap="outerHTML">
+        <button class="btn btn-sm btn-outline-secondary" title="Click to enable">off</button>
+      </form>
+    {% endif %}
+  </td>
+  <td class="text-end">
+    <a class="btn btn-sm btn-outline-light" href="{{ url_for('admin_ui.edit', pk=r.id) }}">Edit</a>
+    <form method="post" action="{{ url_for('admin_ui.delete', pk=r.id) }}" class="d-inline"
+          onsubmit="return confirm('Delete {{ r.system_id }}?');">
+      <button class="btn btn-sm btn-outline-danger">Delete</button>
+    </form>
+  </td>
+</tr>

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set is_edit = (mode == 'edit') %}
+{% block title %}{{ 'Edit' if is_edit else 'New' }} datasource{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">{{ 'Edit datasource' if is_edit else 'New datasource' }}</h3>
+
+<form method="post" class="card p-3"
+      action="{{ url_for('admin_ui.datasources_update', pk=row.id) if is_edit else url_for('admin_ui.datasources_create') }}">
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <label class="form-label">Name (Grafana UID) *</label>
+      <input class="form-control" name="name" required
+             value="{{ row.name or '' }}"
+             {% if is_edit %}readonly{% endif %}
+             placeholder="monitor-postgres-demo-a">
+      <div class="form-text">Used as the datasource UID inside Grafana. Stable; don't rename.</div>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label">Display name *</label>
+      <input class="form-control" name="display_name" required
+             value="{{ row.display_name or '' }}"
+             placeholder="Postgres — Demo Lab A">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Type *</label>
+      <select class="form-select" name="type" required>
+        {% for t in datasource_types %}
+          <option value="{{ t }}" {% if t == row.type %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label class="form-label">URL / address *</label>
+      <input class="form-control" name="url" required value="{{ row.url or '' }}"
+             placeholder="db.example.com:5432 or http://prom:9090">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Default database (optional)</label>
+      <input class="form-control" name="database_name" value="{{ row.database_name or '' }}"
+             placeholder="app">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">DB user (optional)</label>
+      <input class="form-control" name="db_user" value="{{ row.db_user or '' }}"
+             placeholder="monitor_ro">
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label class="form-label">Password env var (optional)</label>
+      <input class="form-control" name="password_env" value="{{ row.password_env or '' }}"
+             placeholder="GF_DS_POSTGRES_DEMO_A_PASSWORD">
+      <div class="form-text">Name only — Grafana reads the actual value from the pod's env.</div>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Lab (optional)</label>
+      <input class="form-control" name="lab_group" list="lab-list"
+             value="{{ row.lab_group or '' }}">
+      <datalist id="lab-list">
+        {% for g in groups %}<option value="{{ g }}">{% endfor %}
+      </datalist>
+    </div>
+    {% if is_edit %}
+    <div class="col-md-3">
+      <label class="form-label">Enabled</label>
+      <select class="form-select" name="is_enable">
+        <option value="1" {% if row.is_enable %}selected{% endif %}>Enabled</option>
+        <option value="0" {% if not row.is_enable %}selected{% endif %}>Disabled</option>
+      </select>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary">{{ 'Save' if is_edit else 'Create' }}</button>
+    <a class="btn btn-outline-light" href="{{ url_for('admin_ui.datasources_index') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

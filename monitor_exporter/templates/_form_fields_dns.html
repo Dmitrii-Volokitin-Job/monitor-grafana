@@ -1,0 +1,15 @@
+<div class="row g-3">
+  <div class="col-md-8">
+    <label class="form-label">Resolver (IP or host:port) *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="1.1.1.1">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Blackbox module *</label>
+    <select class="form-select" name="blackbox_module" required>
+      <option value="dns_udp" {% if row.blackbox_module == 'dns_udp' %}selected{% endif %}>dns_udp (port 53/udp)</option>
+      <option value="dns_tcp" {% if row.blackbox_module == 'dns_tcp' %}selected{% endif %}>dns_tcp (port 53/tcp)</option>
+    </select>
+  </div>
+</div>
+<div class="form-text">Probe issues a SOA query for the root zone (<code>.</code>) and expects any response.</div>

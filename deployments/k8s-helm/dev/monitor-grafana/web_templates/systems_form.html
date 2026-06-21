@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% set is_edit = (mode == 'edit') %}
+{% block title %}{{ 'Edit' if is_edit else 'New' }} system — {{ row.system_type }}{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">
+  {% if is_edit %}Edit system — <code>{{ row.system_id }}</code>
+  {% else %}New system — {{ row.system_type }}{% endif %}
+</h3>
+
+<form method="post"
+      action="{{ url_for('admin_ui.update', pk=row.id) if is_edit else url_for('admin_ui.create') }}"
+      class="card p-3">
+  <div class="row g-3 mb-3">
+    <div class="col-md-3">
+      <label class="form-label">Type *</label>
+      <select class="form-select" name="system_type" id="system-type-select" required
+              {% if is_edit %}disabled{% endif %}>
+        {% for t in system_types %}
+          <option value="{{ t }}" {% if t == row.system_type %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+      {% if is_edit %}<input type="hidden" name="system_type" value="{{ row.system_type }}">{% endif %}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">system_id *</label>
+      <input class="form-control" name="system_id" required
+             value="{{ row.system_id or '' }}"
+             {% if is_edit %}readonly{% endif %}
+             placeholder="e.g. prod-myapp">
+      <div class="form-text">Stable identifier. Used in Prometheus labels and cross-references.</div>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label">Display name *</label>
+      <input class="form-control" name="display_name" required
+             value="{{ row.display_name or '' }}"
+             placeholder="e.g. Production - My App">
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <label class="form-label">Lab / Group</label>
+      <input class="form-control" name="system_group" list="lab-list"
+             value="{{ row.system_group or '' }}"
+             placeholder="Select an existing lab or type a new one">
+      <datalist id="lab-list">
+        {% for g in groups %}<option value="{{ g }}">{% endfor %}
+      </datalist>
+    </div>
+    <div class="col-md-8">
+      <label class="form-label">Description</label>
+      <input class="form-control" name="description"
+             value="{{ row.description or '' }}">
+    </div>
+  </div>
+
+  <div id="type-fields" class="mb-3">
+    {% include "_form_fields_" + row.system_type.lower() + ".html" %}
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-3">
+      <label class="form-label">Timeout (s)</label>
+      <input type="number" class="form-control" name="timeout_seconds"
+             value="{{ row.timeout_seconds or 30 }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Priority</label>
+      <input type="number" class="form-control" name="priority"
+             value="{{ row.priority or 5 }}">
+    </div>
+    {% if is_edit %}
+    <div class="col-md-3">
+      <label class="form-label">Enabled</label>
+      <select class="form-select" name="is_enable">
+        <option value="1" {% if row.is_enable %}selected{% endif %}>Enabled</option>
+        <option value="0" {% if not row.is_enable %}selected{% endif %}>Disabled</option>
+      </select>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" type="submit">{{ 'Save' if is_edit else 'Create' }}</button>
+    <a class="btn btn-outline-light" href="{{ url_for('admin_ui.index') }}">Cancel</a>
+  </div>
+</form>
+
+<script>
+  // Re-render the type-specific field set when the user picks a different type.
+  document.getElementById('system-type-select')?.addEventListener('change', function () {
+    htmx.ajax('GET', '/admin/_fields/' + this.value,
+              { target: '#type-fields', swap: 'innerHTML' });
+  });
+</script>
+{% endblock %}

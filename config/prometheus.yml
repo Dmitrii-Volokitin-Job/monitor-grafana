@@ -1,0 +1,136 @@
+# Prometheus configuration for Monitor
+# All target files are in C:\git\Monitor\monitor-grafana\config\targets\
+#
+# Local retention: start Prometheus with --storage.tsdb.retention.time=90d
+#   prometheus.exe --storage.tsdb.retention.time=90d
+# Docker already uses --storage.tsdb.retention.time=180d in docker-compose.yml
+
+global:
+  scrape_interval: 60s
+  evaluation_interval: 30s
+  scrape_timeout: 30s
+
+  external_labels:
+    monitor: monitor
+
+# Alert rule files
+rule_files:
+  - "C:\\git\\Monitor\\monitor-grafana\\config\\alert_rules\\*.yml"
+
+scrape_configs:
+  # -----------------------------------------------------------
+  # Blackbox HTTP/HTTPS probes (all HTTP-type monitored systems)
+  # Interval: 5 minutes (matches Java healthcheck interval)
+  # -----------------------------------------------------------
+  - job_name: blackbox_http
+    scrape_interval: 5m
+    scrape_timeout: 35s
+    metrics_path: /probe
+    # Targets discovered from the monitored_system DB via the exporter's
+    # HTTP-SD endpoint (admin UI / SD service on port 9119).
+    http_sd_configs:
+      - url: http://127.0.0.1:9119/sd/http
+        refresh_interval: 30s
+    relabel_configs:
+      # Use __param_module label from target file to set the module parameter
+      - source_labels: [__param_module]
+        target_label: __param_module
+      # Pass the target URL as the 'target' query parameter
+      - source_labels: [__address__]
+        target_label: __param_target
+      # Replace the scrape address with the blackbox exporter
+      - target_label: __address__
+        replacement: 127.0.0.1:9115
+      # Keep the original target as the 'instance' label
+      - source_labels: [__param_target]
+        target_label: instance
+
+  # -----------------------------------------------------------
+  # Blackbox TCP probes (DATABASE-type monitored systems)
+  # Interval: 5 minutes
+  # -----------------------------------------------------------
+  - job_name: blackbox_tcp
+    scrape_interval: 5m
+    scrape_timeout: 15s
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    http_sd_configs:
+      - url: http://127.0.0.1:9119/sd/tcp
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9115
+      - source_labels: [__param_target]
+        target_label: instance
+
+  # -----------------------------------------------------------
+  # Blackbox ICMP probes (lab nodes)
+  # Interval: 2 minutes (more frequent for network nodes)
+  # -----------------------------------------------------------
+  - job_name: blackbox_icmp
+    scrape_interval: 2m
+    scrape_timeout: 10s
+    metrics_path: /probe
+    params:
+      module: [icmp_ping]
+    http_sd_configs:
+      - url: http://127.0.0.1:9119/sd/icmp
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9115
+      - source_labels: [__param_target]
+        target_label: instance
+
+  # -----------------------------------------------------------
+  # Monitor Exporter (direct scrape)
+  # The exporter runs its own check schedule internally
+  # -----------------------------------------------------------
+  - job_name: monitor_exporter
+    scrape_interval: 5m
+    scrape_timeout: 30s
+    static_configs:
+      - targets:
+          - 127.0.0.1:9116
+
+  # -----------------------------------------------------------
+  # SSL certificate probes via ssl_exporter
+  # Interval: 1 hour (certificates change infrequently)
+  # -----------------------------------------------------------
+  - job_name: ssl_certificates
+    scrape_interval: 1h
+    scrape_timeout: 30s
+    metrics_path: /probe
+    http_sd_configs:
+      - url: http://127.0.0.1:9119/sd/ssl
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9117
+      - source_labels: [__param_target]
+        target_label: instance
+
+  # -----------------------------------------------------------
+  # Self-monitoring: Prometheus itself
+  # -----------------------------------------------------------
+  - job_name: prometheus
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 127.0.0.1:9090
+
+  # -----------------------------------------------------------
+  # Blackbox exporter self-metrics
+  # -----------------------------------------------------------
+  - job_name: blackbox_exporter
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 127.0.0.1:9115

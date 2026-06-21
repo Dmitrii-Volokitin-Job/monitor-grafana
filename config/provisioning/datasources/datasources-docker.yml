@@ -1,0 +1,32 @@
+apiVersion: 1
+datasources:
+- name: Prometheus
+  type: prometheus
+  uid: monitor-prometheus
+  access: proxy
+  url: http://prometheus:9090
+  isDefault: true
+  editable: true
+  jsonData:
+    httpMethod: POST
+    timeInterval: 60s
+    queryTimeout: 60s
+  version: 1
+- name: Postgres
+  type: postgres
+  uid: monitor-postgres
+  access: proxy
+  url: ${DS_POSTGRES_HOST}:${DS_POSTGRES_PORT}
+  database: ${DS_POSTGRES_DATABASE}
+  user: ${DS_POSTGRES_USER}
+  editable: true
+  jsonData:
+    sslmode: disable
+    postgresVersion: 1600
+    timescaledb: false
+    maxOpenConns: 5
+    maxIdleConns: 2
+    connMaxLifetime: 14400
+  secureJsonData:
+    password: ${DS_POSTGRES_PASSWORD}
+  version: 1

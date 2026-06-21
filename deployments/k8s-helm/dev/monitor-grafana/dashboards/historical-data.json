@@ -1,0 +1,789 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "monitor"
+      ],
+      "title": "Monitor Dashboards",
+      "type": "dashboards"
+    },
+    {
+      "asDropdown": false,
+      "icon": "bolt",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "title": "Reset Filters",
+      "type": "link",
+      "url": "/d/monitor-historical/historical-data-mariadb?var-system_group=All&var-alert_level=All",
+      "targetBlank": false
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "title": "Health Check History (Postgres)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "description": "Health check results from the Java application, stored in Postgres. This data ages out after 90 days per the retention policy.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "mappings": [
+            {
+              "options": {
+                "UP": {
+                  "color": "semi-dark-green",
+                  "index": 0
+                },
+                "DOWN": {
+                  "color": "semi-dark-red",
+                  "index": 1
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "min": 0,
+          "max": 1
+        }
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Health Check Status Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT\n  hch.check_timestamp AS time,\n  CASE hch.status WHEN 'UP' THEN 1 ELSE 0 END AS value,\n  ms.display_name AS metric\nFROM health_check_history hch\nJOIN monitored_system ms ON hch.system_id = ms.id\nWHERE\n  1=1\n\n  AND hch.check_timestamp >= $__timeFrom()\n  AND hch.check_timestamp <= $__timeTo()\nORDER BY hch.check_timestamp ASC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "unit": "ms",
+          "min": 0
+        }
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Response Time History",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT\n  hch.check_timestamp AS time,\n  hch.response_time_ms AS value,\n  ms.display_name AS metric\nFROM health_check_history hch\nJOIN monitored_system ms ON hch.system_id = ms.id\nWHERE\n  1=1\n\n  AND hch.check_timestamp >= $__timeFrom()\n  AND hch.check_timestamp <= $__timeTo()\n  AND hch.response_time_ms IS NOT NULL\nORDER BY hch.check_timestamp ASC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 101,
+      "title": "Historical Alerts (Postgres)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "WARNING": {
+                        "color": "semi-dark-yellow",
+                        "text": "WARNING"
+                      },
+                      "CRITICAL": {
+                        "color": "semi-dark-orange",
+                        "text": "CRITICAL"
+                      },
+                      "EMERGENCY": {
+                        "color": "semi-dark-red",
+                        "text": "EMERGENCY"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "DOWN": {
+                        "color": "semi-dark-red",
+                        "text": "DOWN"
+                      },
+                      "UP": {
+                        "color": "semi-dark-green",
+                        "text": "UP"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "last_status_change"
+          }
+        ]
+      },
+      "title": "Active Alerts",
+      "description": "Currently active alerts from alert_state table. Shows systems that are currently DOWN.",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT\n  ast.last_status_change,\n  ms.display_name AS system_name,\n  ms.system_group,\n  ast.current_severity AS severity,\n  ast.current_status AS status,\n  ast.down_since,\n  ast.alert_count\nFROM alert_state ast\nJOIN monitored_system ms ON ast.system_id = ms.id\nWHERE 1=1\n\n  AND ast.current_status = 'DOWN'\nORDER BY ast.down_since DESC\nLIMIT 100",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avg Downtime (min)"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-green",
+                      "value": null
+                    },
+                    {
+                      "color": "semi-dark-yellow",
+                      "value": 15
+                    },
+                    {
+                      "color": "semi-dark-orange",
+                      "value": 30
+                    },
+                    {
+                      "color": "semi-dark-red",
+                      "value": 60
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max Downtime (min)"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-green",
+                      "value": null
+                    },
+                    {
+                      "color": "semi-dark-yellow",
+                      "value": 30
+                    },
+                    {
+                      "color": "semi-dark-orange",
+                      "value": 60
+                    },
+                    {
+                      "color": "semi-dark-red",
+                      "value": 120
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Avg Downtime (min)"
+          }
+        ]
+      },
+      "title": "Current Alert Duration by Group",
+      "description": "Average and maximum downtime duration for currently active alerts, grouped by environment",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT\n  ms.system_group AS \"Group\",\n  COUNT(*) AS \"Active Alerts\",\n  ROUND(AVG(EXTRACT(EPOCH FROM (NOW() - ast.down_since))/60), 1) AS \"Avg Downtime (min)\",\n  MAX(EXTRACT(EPOCH FROM (NOW() - ast.down_since))/60) AS \"Max Downtime (min)\"\nFROM alert_state ast\nJOIN monitored_system ms ON ast.system_id = ms.id\nWHERE ast.current_status = 'DOWN'\n  AND 1=1\n\nGROUP BY ms.system_group\nORDER BY AVG(EXTRACT(EPOCH FROM (NOW() - ast.down_since))/60) DESC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 102,
+      "title": "Email Audit Trail",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "SENT": {
+                        "color": "semi-dark-green"
+                      },
+                      "FAILED": {
+                        "color": "semi-dark-red"
+                      },
+                      "QUEUED": {
+                        "color": "semi-dark-blue"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "id": 20,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "sent_timestamp"
+          }
+        ]
+      },
+      "title": "Email Audit Trail",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT\n  el.sent_timestamp,\n  el.subject,\n  el.to_recipients,\n  el.email_type,\n  el.status,\n  el.retry_count,\n  el.error_message\nFROM email_log el\nLEFT JOIN monitored_system ms ON el.related_system_id = ms.id\nWHERE el.sent_timestamp >= NOW() - INTERVAL '90 day'\n  AND (1=1 OR el.related_system_id IS NULL)\n  AND 1=1\nORDER BY el.sent_timestamp DESC\nLIMIT 500",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 51
+      },
+      "id": 103,
+      "title": "Maintenance Windows",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "monitor-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "semi-dark-green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "start_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "end_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "ACTIVE": {
+                        "color": "semi-dark-orange",
+                        "text": "ACTIVE"
+                      },
+                      "UPCOMING": {
+                        "color": "semi-dark-blue",
+                        "text": "UPCOMING"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "id": 30,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "start_time"
+          }
+        ]
+      },
+      "title": "Upcoming & Active Maintenance Windows",
+      "description": "Scheduled maintenance windows that are currently active or upcoming",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "monitor-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT\n  mw.title,\n  mw.maintenance_type AS type,\n  mw.start_time,\n  mw.end_time,\n  CASE WHEN NOW() BETWEEN mw.start_time AND mw.end_time THEN 'ACTIVE' ELSE 'UPCOMING' END AS status,\n  STRING_AGG(ms.display_name, ', ') AS affected_systems\nFROM maintenance_window mw\nLEFT JOIN maintenance_window_system mws ON mw.id = mws.maintenance_window_id\nLEFT JOIN monitored_system ms ON mws.system_id = ms.id\nWHERE mw.end_time >= NOW()\n  AND mw.is_cancelled = 0\n  AND (1=1 OR ms.system_group IS NULL)\nGROUP BY mw.id\nORDER BY mw.start_time ASC\nLIMIT 20",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "historical",
+    "mariadb",
+    "monitor"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "monitor-postgres"
+        },
+        "definition": "SELECT name AS __value, COALESCE(display_name, name) AS __text FROM lab WHERE is_enable = 1 ORDER BY name",
+        "includeAll": true,
+        "multi": true,
+        "name": "system_group",
+        "query": "SELECT name AS __value, COALESCE(display_name, name) AS __text FROM lab WHERE is_enable = 1 ORDER BY name",
+        "refresh": 1,
+        "sort": 1,
+        "type": "query",
+        "label": "Environment Group",
+        "allValue": ".*"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "type": "custom",
+        "name": "alert_level",
+        "label": "Alert Level",
+        "query": "WARNING,CRITICAL,EMERGENCY",
+        "includeAll": true,
+        "multi": true,
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "WARNING",
+            "value": "WARNING"
+          },
+          {
+            "selected": false,
+            "text": "CRITICAL",
+            "value": "CRITICAL"
+          },
+          {
+            "selected": false,
+            "text": "EMERGENCY",
+            "value": "EMERGENCY"
+          }
+        ]
+      },
+      {
+        "hide": 2,
+        "name": "DS_PROMETHEUS",
+        "query": "prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Historical Data (Postgres)",
+  "uid": "monitor-historical",
+  "version": 1
+}

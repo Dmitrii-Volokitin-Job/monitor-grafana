@@ -1,0 +1,295 @@
+# Docker Compose for the Monitor Grafana stack
+# All services in one deployment for cloud/on-premise use
+#
+# Usage:
+#   docker-compose up -d
+#   docker-compose --env-file .env up -d
+#
+# Configuration: see .env file for all configurable values
+
+# Pin the project name so it's independent of the cwd folder name
+# (Docker Compose otherwise derives it from os.path.basename(cwd)).
+name: monitor-grafana
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: monitor-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-monitoring}
+      - POSTGRES_USER=${POSTGRES_USER:-monitoring}
+      # NEVER use the fallback in prod — set POSTGRES_PASSWORD in .env.
+      # `changeme-set-via-env` is intentionally not a real-looking credential
+      # so leaks into logs are obvious.
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme-set-via-env}
+    volumes:
+      - ./docker/init-db:/docker-entrypoint-initdb.d:ro
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-monitoring} -d ${POSTGRES_DB:-monitoring}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: monitor-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=180d"
+      - "--web.enable-lifecycle"
+      # --web.enable-admin-api unlocks /api/v1/admin/tsdb/delete_series, used
+      # to purge old test-fixture series that linger in TSDB after the demo
+      # rows are removed from monitored_system. Safe to leave on for local
+      # dev / demo; restrict via network policy in prod.
+      - "--web.enable-admin-api"
+    volumes:
+      - ./config/prometheus-docker.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/alert_rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_HOST_PORT:-9090}:9090"
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: monitor-blackbox
+    command:
+      - "--config.file=/etc/blackbox/blackbox.yml"
+    volumes:
+      - ./config/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+    ports:
+      - "9115:9115"
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  ssl-exporter:
+    image: ribbybibby/ssl-exporter:2.4.3
+    container_name: monitor-ssl-exporter
+    # Default listen-address is :9219; override to :9117 so Prometheus scrape
+    # config (config/prometheus-docker.yml + config/prometheus.yml) and the
+    # host port mapping below stay aligned on 9117.
+    command: ["--web.listen-address=:9117"]
+    ports:
+      - "9117:9117"
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  monitor-exporter:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.monitor-exporter
+    container_name: monitor-exporter
+    environment:
+      # Override prometheus URL for Docker — exporter uses service name, not localhost
+      - PROMETHEUS_URL=http://prometheus:9090
+      # Postgres connection — host overrides config.yml's default (`localhost`)
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-monitoring}
+      - POSTGRES_USER=${POSTGRES_USER:-monitoring}
+      # NEVER use the fallback in prod — set POSTGRES_PASSWORD in .env.
+      # `changeme-set-via-env` is intentionally not a real-looking credential
+      # so leaks into logs are obvious.
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme-set-via-env}
+      # DS_POSTGRES_* are used by Grafana provisioning, not the exporter — passed
+      # through for consistency with the env-var contract.
+      - DS_POSTGRES_HOST=${DS_POSTGRES_HOST:-postgres}
+      - DS_POSTGRES_PORT=${DS_POSTGRES_PORT:-5432}
+      # Admin UI auth: validates inbound grafana_session cookies against Grafana.
+      # _INTERNAL_URL is used server-to-server (docker network → service name +
+      # container port). _PUBLIC_URL is also embedded in alert-email deep-links
+      # so it MUST match what the human's browser can resolve (host port, not
+      # container port).
+      - GRAFANA_INTERNAL_URL=${GRAFANA_INTERNAL_URL:-http://grafana:3000}
+      - GRAFANA_PUBLIC_URL=${GRAFANA_PUBLIC_URL:-http://localhost:${GRAFANA_HOST_PORT:-3000}}
+      - ADMIN_UI_SECRET_KEY=${ADMIN_UI_SECRET_KEY:-change-me-in-prod}
+    ports:
+      - "9116:9116"   # Prometheus metrics endpoint
+      - "9119:9119"   # Admin UI + Prometheus HTTP-SD endpoints
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  grafana:
+    image: grafana/grafana-oss:11.4.0
+    container_name: monitor-grafana
+    environment:
+      # Use the grafana-image-renderer SIDECAR (separate container) instead of
+      # the in-process plugin. The plugin doesn't ship a linux-arm64 binary
+      # (M-series Macs / ARM-based clouds fail with `plugin.archNotFound`); the
+      # sidecar image IS multi-arch. URL points at the renderer container, the
+      # callback URL is what the renderer reaches back to for the Grafana side.
+      - GF_RENDERING_SERVER_URL=http://renderer:8081/render
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
+      # NEVER use the fallback in prod — set GF_SECURITY_ADMIN_PASSWORD in .env.
+      # `changeme-set-via-env` is intentionally not a real credential so any
+      # accidental log leak is obvious. Grafana itself defaults `admin/admin`
+      # if neither this nor the ini file sets one, and forces a change on
+      # first login.
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-changeme-set-via-env}
+      - DS_POSTGRES_HOST=${DS_POSTGRES_HOST:-postgres}
+      - DS_POSTGRES_PORT=${DS_POSTGRES_PORT:-5432}
+      - DS_POSTGRES_DATABASE=${DS_POSTGRES_DATABASE:-monitoring}
+      - DS_POSTGRES_USER=${DS_POSTGRES_USER:-monitoring}
+      # Datasource password — same rule as POSTGRES_PASSWORD above.
+      - DS_POSTGRES_PASSWORD=${DS_POSTGRES_PASSWORD:-changeme-set-via-env}
+      # SMTP — set via GF_SMTP_* envs (Grafana auto-maps these). Disabled
+      # by default; flip GF_SMTP_ENABLED=true and fill the rest to enable.
+      - GF_SMTP_ENABLED=${GF_SMTP_ENABLED:-false}
+      - GF_SMTP_HOST=${SMTP_HOST:-smtp.example.com}:${SMTP_PORT:-25}
+      - GF_SMTP_FROM_ADDRESS=${SMTP_FROM:-monitoring@example.com}
+      - GF_SMTP_FROM_NAME=Monitor
+      - GF_SMTP_STARTTLS_POLICY=${SMTP_STARTTLS_POLICY:-OpportunisticStartTLS}
+      - GF_SMTP_SKIP_VERIFY=true
+      - GF_SMTP_USER=${SMTP_USER:-}
+      - GF_SMTP_PASSWORD=${SMTP_PASSWORD:-}
+    volumes:
+      - ./config/grafana-docker.ini:/etc/grafana/grafana.ini:ro
+      - ./config/provisioning/datasources/datasources-docker.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      # Mount only the docker variant so the Linux container sees a Linux path (the
+      # sibling dashboards.yml uses a Windows path for native-Windows runs).
+      - ./config/provisioning/dashboards/dashboards-docker.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./config/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_HOST_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  renderer:
+    # Grafana image-renderer sidecar — multi-arch (works on linux/amd64 + arm64,
+    # unlike the in-Grafana-process plugin which is amd64-only). Used by
+    # Grafana for /render/d/<uid> dashboard PNG generation (alerting screenshots,
+    # offline docs). Listens internally on :8081; no host port exposed.
+    image: grafana/grafana-image-renderer:3.11.6
+    container_name: monitor-renderer
+    environment:
+      - ENABLE_METRICS=true
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  # ===========================================================================
+  # Demo target containers — REAL local services for probe types with no public
+  # equivalent (Postgres / MySQL / Redis / Mongo / Elasticsearch).
+  #
+  # All gated behind `profiles: ["full"]` so the default `docker compose up -d`
+  # stays lean (~600 MB lighter without ES). To start them:
+  #   COMPOSE_PROFILES=full docker compose up -d
+  #
+  # The seed in docker/init-db/09-seed-new-types-and-datasources.sql points
+  # demo-a-{postgres,mysql,redis,mongo,es} at these hostnames so the dashboards
+  # show real UP data once the full profile is running.
+  # ===========================================================================
+  demo-postgres-target:
+    image: postgres:16-alpine
+    container_name: demo-postgres-target
+    profiles: ["full"]
+    environment:
+      - POSTGRES_DB=demo
+      - POSTGRES_USER=demo
+      - POSTGRES_PASSWORD=demo
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d demo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  demo-mysql-target:
+    image: mysql:8.0
+    container_name: demo-mysql-target
+    profiles: ["full"]
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=demo
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  demo-redis-target:
+    image: redis:7-alpine
+    container_name: demo-redis-target
+    profiles: ["full"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  demo-mongo-target:
+    image: mongo:7
+    container_name: demo-mongo-target
+    profiles: ["full"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  demo-es-target:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: demo-es-target
+    profiles: ["full"]
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    restart: unless-stopped
+    networks:
+      - monitor
+
+volumes:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  monitor:
+    driver: bridge

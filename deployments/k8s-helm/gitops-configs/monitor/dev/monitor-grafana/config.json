@@ -1,0 +1,16 @@
+{
+    "app": {
+        "name": "monitor-grafana-dev",
+        "path": "dev/monitor-grafana/"
+    },
+    "namespace": {
+        "name": "monitor-dev",
+        "owner": ""
+    },
+    "values": {
+        "path": "../../helm-values/monitor/dev/monitor-grafana/values.yaml"
+    },
+    "argo-project": {
+        "name": "monitor"
+    }
+}

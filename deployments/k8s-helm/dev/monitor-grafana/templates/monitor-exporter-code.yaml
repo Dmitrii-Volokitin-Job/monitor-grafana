@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitor-exporter-code
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "monitor-exporter" "context" $) | nindent 4 }}
+data:
+  exporter.py: |
+{{ .Files.Get "exporter.py" | indent 4 }}
+  e2e_exporter.py: |
+{{ .Files.Get "e2e_exporter.py" | indent 4 }}
+  sonar_exporter.py: |
+{{ .Files.Get "sonar_exporter.py" | indent 4 }}
+  e2e_trigger.py: |
+{{ .Files.Get "e2e_trigger.py" | indent 4 }}
+  admin_ui.py: |
+{{ .Files.Get "admin_ui.py" | indent 4 }}
+  sd_endpoints.py: |
+{{ .Files.Get "sd_endpoints.py" | indent 4 }}
+  datasource_sync.py: |
+{{ .Files.Get "datasource_sync.py" | indent 4 }}

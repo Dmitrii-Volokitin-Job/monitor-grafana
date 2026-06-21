@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Labs{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Labs <span class="text-secondary">({{ labs|length }})</span></h3>
+  <a class="btn btn-primary" href="{{ url_for('admin_ui.labs_new') }}">+ New lab</a>
+</div>
+
+<p class="text-secondary small">
+  Labs group monitored systems by environment / cluster. Dashboards read this table
+  to populate the lab dropdown — new labs appear there immediately.
+</p>
+
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Name (key)</th><th>Display name</th><th>Description</th>
+        <th>Systems</th><th>Enabled</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in labs %}
+      <tr>
+        <td><code>{{ l.name }}</code></td>
+        <td>{{ l.display_name }}</td>
+        <td class="text-secondary">{{ l.description or '—' }}</td>
+        <td><span class="badge bg-info text-dark">{{ l.system_count }}</span></td>
+        <td>{% if l.is_enable %}<span class="badge badge-up">on</span>
+            {% else %}<span class="badge bg-secondary">off</span>{% endif %}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-light" href="{{ url_for('admin_ui.labs_edit', pk=l.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('admin_ui.labs_delete', pk=l.id) }}" class="d-inline"
+                onsubmit="return confirm('Delete lab {{ l.name }}? (will fail if any system still references it)');">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-secondary p-4">No labs defined yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

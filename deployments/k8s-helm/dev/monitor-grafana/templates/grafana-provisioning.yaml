@@ -1,0 +1,1431 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning-datasources
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "grafana" "context" $) | nindent 4 }}
+data:
+  datasources.yml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: monitor-prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+        jsonData:
+          httpMethod: POST
+          timeInterval: "60s"
+        editable: false
+
+      - name: Postgres
+        type: postgres
+        uid: monitor-postgres
+        access: proxy
+        url: {{ .Values.postgres.host }}:{{ .Values.postgres.port }}
+        database: {{ .Values.postgres.database }}
+        user: {{ .Values.postgres.user }}
+        jsonData:
+          sslmode: disable
+          postgresVersion: 1600
+          timescaledb: false
+          maxOpenConns: 5
+          maxIdleConns: 2
+        secureJsonData:
+          password: ${GF_DS_POSTGRES_PASSWORD}
+        editable: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning-dashboards
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "grafana" "context" $) | nindent 4 }}
+data:
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+      - name: monitor
+        orgId: 1
+        folder: Monitor
+        folderUid: monitor
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning-alerting
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "grafana" "context" $) | nindent 4 }}
+data:
+  alerting.yml: |
+    apiVersion: 1
+
+    # =========================================================================
+    # Email contact points — every receiver below uses a placeholder address
+    # (`alerts@example.com`). Replace each `addresses:` field with the real team
+    # =========================================================================
+
+    contactPoints:
+      - orgId: 1
+        name: Default CC Recipients
+        receivers:
+          - uid: default-cc
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: MCxAS/CSAM Support
+        receivers:
+          - uid: mcxas-csam-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: mcxas-csam-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: mcxas-csam-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: CGMS Support
+        receivers:
+          - uid: cgms-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: cgms-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: cgms-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: IMS Support
+        receivers:
+          - uid: ims-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: ims-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: ims-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: TMX Support
+        receivers:
+          - uid: tmx-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: tmx-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: tmx-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: Keycloak Support
+        receivers:
+          - uid: keycloak-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: keycloak-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: keycloak-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: Phonebook Support
+        receivers:
+          - uid: phonebook-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: phonebook-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: phonebook-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: DDI Support
+        receivers:
+          - uid: ddi-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: ddi-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: ddi-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: Monitor Support
+        receivers:
+          - uid: monitor-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: monitor-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: monitor-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: Database Support
+        receivers:
+          - uid: database-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: database-manager
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+          - uid: database-stakeholders
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+      - orgId: 1
+        name: SSL Certificate Support
+        receivers:
+          - uid: ssl-admin
+            type: email
+            settings:
+              addresses: "alerts@example.com"
+              singleEmail: false
+
+    # Notification template — Grafana auto-uses templates named default.subject and
+    # default.message for every email contact point. No need to wire each receiver.
+    templates:
+      - orgId: 1
+        name: default
+        template: |
+          {{`{{ define "default.subject" -}}`}}
+          {{`{{- if eq .Status "firing" }}`}}[FIRING]{{`{{ else }}`}}[RESOLVED]{{`{{ end -}}`}}
+          {{`{{ if .CommonLabels.severity }}`}} [{{`{{ .CommonLabels.severity | toUpper }}`}}]{{`{{ end -}}`}}
+          {{`{{ if eq (len .Alerts) 1 -}}`}}
+          {{`{{ with index .Alerts 0 }}`}} {{`{{ if .Labels.display_name }}`}}{{`{{ .Labels.display_name }}`}}{{`{{ else if .Labels.node_name }}`}}{{`{{ .Labels.node_name }}`}}{{`{{ else if .Labels.cert_alias }}`}}{{`{{ .Labels.cert_alias }}`}}{{`{{ else }}`}}{{`{{ .Labels.alertname }}`}}{{`{{ end }}`}} — {{`{{ if .Labels.system_group }}`}}{{`{{ .Labels.system_group }}`}}{{`{{ else if .Labels.lab_group }}`}}{{`{{ .Labels.lab_group }}`}}{{`{{ else }}`}}Monitor{{`{{ end }}`}}{{`{{ end -}}`}}
+          {{`{{ else }}`}} {{`{{ len .Alerts }}`}} alerts{{`{{ if .CommonLabels.system_group }}`}} — {{`{{ .CommonLabels.system_group }}`}}{{`{{ else if .CommonLabels.lab_group }}`}} — {{`{{ .CommonLabels.lab_group }}`}}{{`{{ end }}`}}{{`{{ end -}}`}}
+          {{`{{ end }}`}}
+
+          {{`{{ define "default.message" }}`}}
+          {{`{{- if eq .Status "firing" -}}`}}
+          ## ALERT FIRING{{`{{ if .CommonLabels.severity }}`}} — severity {{`{{ .CommonLabels.severity | toUpper }}`}}{{`{{ end }}`}}
+          {{`{{- else -}}`}}
+          ## ALERT RESOLVED
+          {{`{{- end }}`}}
+
+          **{{`{{ len .Alerts }}`}} {{`{{ if eq .Status "firing" }}`}}firing{{`{{ else }}`}}cleared{{`{{ end }}`}} alert(s)**{{`{{ if .CommonLabels.system_group }}`}} in environment **{{`{{ .CommonLabels.system_group }}`}}**{{`{{ end }}`}}{{`{{ if .CommonLabels.lab_group }}`}} in lab **{{`{{ .CommonLabels.lab_group }}`}}**{{`{{ end }}`}}.
+
+          {{`{{ if eq .Status "firing" -}}`}}
+          *The owning team is expected to investigate. Quick-action links are listed under each alert below.*
+          {{`{{- else -}}`}}
+          *Informational notice — the systems have recovered, no action needed.*
+          {{`{{- end }}`}}
+          {{`{{ range .Alerts }}`}}
+          ---
+
+          ### {{`{{ if .Labels.display_name }}`}}{{`{{ .Labels.display_name }}`}}{{`{{ else if .Labels.node_name }}`}}{{`{{ .Labels.node_name }}`}}{{`{{ else if .Labels.cert_alias }}`}}{{`{{ .Labels.cert_alias }}`}}{{`{{ else }}`}}{{`{{ .Labels.alertname }}`}}{{`{{ end }}`}}
+          {{`{{ if .Annotations.summary }}`}}
+          > {{`{{ .Annotations.summary }}`}}
+          {{`{{ end }}`}}
+          - **Status:** {{`{{ .Status | toUpper }}`}}{{`{{ if .Labels.severity }}`}} (severity {{`{{ .Labels.severity | toUpper }}`}}){{`{{ end }}`}}
+          - **Alert rule:** {{`{{ .Labels.alertname }}`}}
+          {{`{{- if .Labels.alert_type }}`}}
+          - **Alert type:** {{`{{ .Labels.alert_type }}`}}
+          {{`{{- end }}`}}
+          {{`{{- if .Labels.system_id }}`}}
+          - **System ID:** `{{`{{ .Labels.system_id }}`}}`
+          {{`{{- end }}`}}
+          {{`{{- if .Labels.node_id }}`}}
+          - **Node ID:** `{{`{{ .Labels.node_id }}`}}`
+          {{`{{- end }}`}}
+          {{`{{- if .Labels.system_group }}`}}
+          - **Environment:** {{`{{ .Labels.system_group }}`}}
+          {{`{{- end }}`}}
+          {{`{{- if .Labels.lab_group }}`}}
+          - **Lab:** {{`{{ .Labels.lab_group }}`}}
+          {{`{{- end }}`}}
+          {{`{{- if .Labels.cert_alias }}`}}
+          - **Certificate:** {{`{{ .Labels.cert_alias }}`}}
+          {{`{{- end }}`}}
+          {{`{{- if .Labels.cert_description }}`}}
+          - **Cert description:** {{`{{ .Labels.cert_description }}`}}
+          {{`{{- end }}`}}
+          {{`{{- if .Labels.instance }}`}}
+          - **Address:** `{{`{{ .Labels.instance }}`}}`
+          {{`{{- end }}`}}
+          {{`{{- if eq .Status "firing" }}`}}
+          - **Firing since:** {{`{{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}`}}
+          {{`{{- else }}`}}
+          - **Fired at:** {{`{{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}`}}
+          - **Resolved at:** {{`{{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}`}}
+          - **Total downtime:** {{`{{ .EndsAt.Sub .StartsAt }}`}}
+          {{`{{- end }}`}}
+          {{`{{- if .ValueString }}`}}
+          - **Trigger value:** `{{`{{ .ValueString }}`}}`
+          {{`{{- end }}`}}
+
+          {{`{{ if .Annotations.description -}}`}}
+          **What happened**
+
+          {{`{{ .Annotations.description }}`}}
+
+          {{`{{ end -}}`}}
+          **Quick actions**
+
+          {{`{{ if .GeneratorURL }}`}}- View alert in Grafana — {{`{{ .GeneratorURL }}`}}
+          {{`{{ end -}}`}}
+          {{`{{ if .SilenceURL }}`}}- Silence this alert — {{`{{ .SilenceURL }}`}}
+          {{`{{ end -}}`}}
+          {{`{{ if .DashboardURL }}`}}- Open source dashboard — {{`{{ .DashboardURL }}`}}
+          {{`{{ end -}}`}}
+          {{`{{ if .PanelURL }}`}}- Open source panel — {{`{{ .PanelURL }}`}}
+          {{`{{ end -}}`}}
+          {{`{{ if .Annotations.runbook_url }}`}}- Runbook — {{`{{ .Annotations.runbook_url }}`}}
+          {{`{{ end -}}`}}
+          {{`{{ if .Fingerprint }}`}}
+          *Alert fingerprint: `{{`{{ .Fingerprint }}`}}`*
+          {{`{{ end -}}`}}
+          {{`{{ end }}`}}
+          ---
+
+          *Sent by **Monitor** — Grafana Unified Alerting on top of Prometheus, Blackbox/SSL exporters, and the Monitor Exporter (LDAP, Keycloak, DB checks).*
+          {{`{{- if .ExternalURL }}`}}
+          *Grafana home: {{`{{ .ExternalURL }}`}}*
+          {{`{{- end }}`}}
+
+          *This email is part of the **TEST DISTRIBUTION** — every contact point currently routes to `alerts@example.com`. Real team mailing lists will replace these once provided.*
+          {{`{{ end }}`}}
+
+    policies:
+      - orgId: 1
+        receiver: Default CC Recipients
+        group_by:
+          - grafana_folder
+          - alertname
+          - system_id
+        group_wait: 30s
+        group_interval: 15m
+        repeat_interval: 24h
+        routes:
+          - receiver: MCxAS/CSAM Support
+            matchers:
+              - system_id =~ ".*-mcxas"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: CGMS Support
+            matchers:
+              - system_id =~ ".*-cgms"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: IMS Support
+            matchers:
+              - system_id =~ ".*-ims"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: TMX Support
+            matchers:
+              - system_id =~ ".*-tmx"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: Keycloak Support
+            matchers:
+              - system_id =~ ".*-idms"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: Phonebook Support
+            matchers:
+              - system_id =~ ".*-pbldap"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: DDI Support
+            matchers:
+              - system_id =~ ".*-ddi"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: Monitor Support
+            matchers:
+              - system_id =~ ".*-monitor-(api|api-gw|ui)"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: Database Support
+            matchers:
+              - system_id =~ ".*-mariadb"
+            continue: true
+            group_interval: 15m
+            repeat_interval: 24h
+
+          - receiver: SSL Certificate Support
+            matchers:
+              - alert_type = ssl
+            continue: false
+            group_interval: 15m
+            repeat_interval: 24h
+
+    groups:
+      - orgId: 1
+        name: System Availability - WARNING
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: http-system-down-warning
+            title: HTTP System Unavailable (WARNING)
+            condition: C
+            for: 10m
+            labels:
+              severity: warning
+              alert_type: availability
+            annotations:
+              summary: "WARNING: {{`{{ $labels.display_name }}`}} is unreachable"
+              description: "HTTP probe for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) in {{`{{ $labels.system_group }}`}} has been failing for more than 10 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_http"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: tcp-system-down-warning
+            title: TCP Database Unreachable (WARNING)
+            condition: C
+            for: 10m
+            labels:
+              severity: warning
+              alert_type: availability
+            annotations:
+              summary: "WARNING: {{`{{ $labels.display_name }}`}} TCP connection failed"
+              description: "TCP probe for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) in {{`{{ $labels.system_group }}`}} has been failing for more than 10 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_tcp"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: System Availability - CRITICAL
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: http-system-down-critical
+            title: HTTP System Unavailable (CRITICAL)
+            condition: C
+            for: 60m
+            labels:
+              severity: critical
+              alert_type: availability
+            annotations:
+              summary: "CRITICAL: {{`{{ $labels.display_name }}`}} is unreachable"
+              description: "HTTP probe for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) in {{`{{ $labels.system_group }}`}} has been failing for more than 60 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 3600
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_http"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: tcp-system-down-critical
+            title: TCP Database Unreachable (CRITICAL)
+            condition: C
+            for: 60m
+            labels:
+              severity: critical
+              alert_type: availability
+            annotations:
+              summary: "CRITICAL: {{`{{ $labels.display_name }}`}} TCP connection failed"
+              description: "TCP probe for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) in {{`{{ $labels.system_group }}`}} has been failing for more than 60 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 3600
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_tcp"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: System Availability - EMERGENCY
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: http-system-down-emergency
+            title: HTTP System Unavailable (EMERGENCY)
+            condition: C
+            for: 2h
+            labels:
+              severity: emergency
+              alert_type: availability
+            annotations:
+              summary: "EMERGENCY: {{`{{ $labels.display_name }}`}} is unreachable"
+              description: "HTTP probe for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) in {{`{{ $labels.system_group }}`}} has been failing for more than 2 hours."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 7200
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_http"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: tcp-system-down-emergency
+            title: TCP Database Unreachable (EMERGENCY)
+            condition: C
+            for: 2h
+            labels:
+              severity: emergency
+              alert_type: availability
+            annotations:
+              summary: "EMERGENCY: {{`{{ $labels.display_name }}`}} TCP connection failed"
+              description: "TCP probe for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) in {{`{{ $labels.system_group }}`}} has been failing for more than 2 hours."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 7200
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_tcp"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: Monitor Exporter - WARNING
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: ldap-down-warning
+            title: LDAP Service Unavailable (WARNING)
+            condition: C
+            for: 10m
+            labels:
+              severity: warning
+              alert_type: availability
+            annotations:
+              summary: "WARNING: {{`{{ $labels.display_name }}`}} LDAP bind failed"
+              description: "LDAP bind check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 10 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                model:
+                  expr: monitor_ldap_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: keycloak-down-warning
+            title: Keycloak Service Unavailable (WARNING)
+            condition: C
+            for: 10m
+            labels:
+              severity: warning
+              alert_type: availability
+            annotations:
+              summary: "WARNING: {{`{{ $labels.display_name }}`}} Keycloak health check failed"
+              description: "Keycloak health check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 10 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                model:
+                  expr: monitor_keycloak_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: database-down-warning
+            title: Database Service Unavailable (WARNING)
+            condition: C
+            for: 10m
+            labels:
+              severity: warning
+              alert_type: availability
+            annotations:
+              summary: "WARNING: {{`{{ $labels.display_name }}`}} database check failed"
+              description: "Database health check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 10 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                model:
+                  expr: monitor_database_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: Monitor Exporter - CRITICAL
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: ldap-down-critical
+            title: LDAP Service Unavailable (CRITICAL)
+            condition: C
+            for: 60m
+            labels:
+              severity: critical
+              alert_type: availability
+            annotations:
+              summary: "CRITICAL: {{`{{ $labels.display_name }}`}} LDAP bind failed"
+              description: "LDAP bind check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 60 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 3600
+                  to: 0
+                model:
+                  expr: monitor_ldap_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: keycloak-down-critical
+            title: Keycloak Service Unavailable (CRITICAL)
+            condition: C
+            for: 60m
+            labels:
+              severity: critical
+              alert_type: availability
+            annotations:
+              summary: "CRITICAL: {{`{{ $labels.display_name }}`}} Keycloak health check failed"
+              description: "Keycloak health check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 60 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 3600
+                  to: 0
+                model:
+                  expr: monitor_keycloak_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: database-down-critical
+            title: Database Service Unavailable (CRITICAL)
+            condition: C
+            for: 60m
+            labels:
+              severity: critical
+              alert_type: availability
+            annotations:
+              summary: "CRITICAL: {{`{{ $labels.display_name }}`}} database check failed"
+              description: "Database health check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 60 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 3600
+                  to: 0
+                model:
+                  expr: monitor_database_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: Monitor Exporter - EMERGENCY
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: ldap-down-emergency
+            title: LDAP Service Unavailable (EMERGENCY)
+            condition: C
+            for: 2h
+            labels:
+              severity: emergency
+              alert_type: availability
+            annotations:
+              summary: "EMERGENCY: {{`{{ $labels.display_name }}`}} LDAP bind failed"
+              description: "LDAP bind check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 2 hours."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 7200
+                  to: 0
+                model:
+                  expr: monitor_ldap_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: keycloak-down-emergency
+            title: Keycloak Service Unavailable (EMERGENCY)
+            condition: C
+            for: 2h
+            labels:
+              severity: emergency
+              alert_type: availability
+            annotations:
+              summary: "EMERGENCY: {{`{{ $labels.display_name }}`}} Keycloak health check failed"
+              description: "Keycloak health check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 2 hours."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 7200
+                  to: 0
+                model:
+                  expr: monitor_keycloak_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+          - uid: database-down-emergency
+            title: Database Service Unavailable (EMERGENCY)
+            condition: C
+            for: 2h
+            labels:
+              severity: emergency
+              alert_type: availability
+            annotations:
+              summary: "EMERGENCY: {{`{{ $labels.display_name }}`}} database check failed"
+              description: "Database health check for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) has been failing for more than 2 hours."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 7200
+                  to: 0
+                model:
+                  expr: monitor_database_up
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: Lab Node Availability - WARNING
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: icmp-node-down-warning
+            title: Lab Node Unreachable (WARNING)
+            condition: C
+            for: 10m
+            labels:
+              severity: warning
+              alert_type: availability
+            annotations:
+              summary: "WARNING: {{`{{ $labels.node_name }}`}} is unreachable"
+              description: "ICMP ping for {{`{{ $labels.node_name }}`}} ({{`{{ $labels.instance }}`}}) in {{`{{ $labels.lab_group }}`}} has been failing for more than 10 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_icmp"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: Lab Node Availability - CRITICAL
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: icmp-node-down-critical
+            title: Lab Node Unreachable (CRITICAL)
+            condition: C
+            for: 60m
+            labels:
+              severity: critical
+              alert_type: availability
+            annotations:
+              summary: "CRITICAL: {{`{{ $labels.node_name }}`}} is unreachable"
+              description: "ICMP ping for {{`{{ $labels.node_name }}`}} ({{`{{ $labels.instance }}`}}) in {{`{{ $labels.lab_group }}`}} has been failing for more than 60 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 3600
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_icmp"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: Lab Node Availability - EMERGENCY
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: icmp-node-down-emergency
+            title: Lab Node Unreachable (EMERGENCY)
+            condition: C
+            for: 2h
+            labels:
+              severity: emergency
+              alert_type: availability
+            annotations:
+              summary: "EMERGENCY: {{`{{ $labels.node_name }}`}} is unreachable"
+              description: "ICMP ping for {{`{{ $labels.node_name }}`}} ({{`{{ $labels.instance }}`}}) in {{`{{ $labels.lab_group }}`}} has been failing for more than 2 hours."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 7200
+                  to: 0
+                model:
+                  expr: probe_success{job="blackbox_icmp"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [1]
+                  refId: C
+
+      - orgId: 1
+        name: SSL Certificate Alerts
+        folder: Monitor
+        interval: 1h
+        rules:
+          - uid: ssl-expiry-30d
+            title: SSL Certificate Expiring in 30 Days
+            condition: C
+            for: 0s
+            labels:
+              severity: warning
+              alert_type: ssl
+            annotations:
+              summary: "SSL certificate for {{`{{ $labels.cert_alias }}`}} expires in less than 30 days"
+              description: "The SSL certificate for {{`{{ $labels.cert_alias }}`}} ({{`{{ $labels.cert_description }}`}}) is expiring soon. Renew before expiry to avoid service disruption."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 7200
+                  to: 0
+                model:
+                  expr: (probe_ssl_earliest_cert_expiry - time()) / 86400
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [30]
+                  refId: C
+
+          - uid: ssl-expiry-7d
+            title: SSL Certificate Expiring in 7 Days
+            condition: C
+            for: 0s
+            labels:
+              severity: critical
+              alert_type: ssl
+            annotations:
+              summary: "URGENT: SSL certificate for {{`{{ $labels.cert_alias }}`}} expires in less than 7 days"
+              description: "The SSL certificate for {{`{{ $labels.cert_alias }}`}} ({{`{{ $labels.cert_description }}`}}) is critically close to expiry. Immediate renewal required."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 7200
+                  to: 0
+                model:
+                  expr: (probe_ssl_earliest_cert_expiry - time()) / 86400
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [7]
+                  refId: C
+
+      - orgId: 1
+        name: Performance Alerts
+        folder: Monitor
+        interval: 5m
+        rules:
+          - uid: high-response-time
+            title: High Response Time
+            condition: C
+            for: 10m
+            labels:
+              severity: warning
+              alert_type: performance
+            annotations:
+              summary: "{{`{{ $labels.display_name }}`}} response time exceeds 5 seconds"
+              description: "HTTP response time for {{`{{ $labels.display_name }}`}} ({{`{{ $labels.system_id }}`}}) in {{`{{ $labels.system_group }}`}} has been above 5 seconds for more than 10 minutes."
+            data:
+              - refId: A
+                datasourceUid: monitor-prometheus
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                model:
+                  expr: probe_duration_seconds{job="blackbox_http"}
+                  instant: true
+                  refId: A
+              - refId: B
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  refId: B
+              - refId: C
+                datasourceUid: "__expr__"
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                model:
+                  type: threshold
+                  expression: B
+                  conditions:
+                    - evaluator:
+                        type: gt
+                        params: [5]
+                  refId: C

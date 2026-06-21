@@ -1,0 +1,19 @@
+{{/*
+Render each dashboards/*.json as its own grafana-dashboard-<name> ConfigMap.
+Grafana's sidecar discovers them via the `grafana-dashboard: "true"` label.
+*/}}
+{{- $root := . }}
+{{- range $name, $content := .Files.Glob "dashboards/*.json" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-{{ $name | base | trimSuffix ".json" }}
+  namespace: {{ $root.Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "grafana" "context" $root) | nindent 4 }}
+    grafana-dashboard: "true"
+data:
+  {{ $name | base }}: |
+{{ ($content | toString) | indent 4 }}
+{{- end }}

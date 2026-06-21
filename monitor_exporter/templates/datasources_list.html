@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Grafana datasources{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Grafana datasources <span class="text-secondary">({{ rows|length }})</span></h3>
+  <a class="btn btn-primary" href="{{ url_for('admin_ui.datasources_new') }}">+ New datasource</a>
+</div>
+
+<p class="text-secondary small">
+  Each row here becomes a Grafana data source. The DB Observability dashboard's
+  data source dropdown reads from this table, so adding a row makes that lab's
+  panels light up on next dashboard load. Passwords are read from the environment
+  variable named in the <strong>password env</strong> column — never stored here.
+</p>
+
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Name (Grafana UID)</th><th>Display</th><th>Type</th>
+        <th>URL</th><th>Database</th><th>User</th><th>Password env</th>
+        <th>Lab</th><th>Enabled</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td><code>{{ r.name }}</code></td>
+        <td>{{ r.display_name }}</td>
+        <td><span class="badge bg-info text-dark">{{ r.type }}</span></td>
+        <td class="text-truncate" style="max-width: 260px;">{{ r.url }}</td>
+        <td>{{ r.database_name or '—' }}</td>
+        <td>{{ r.db_user or '—' }}</td>
+        <td>{% if r.password_env %}<code>{{ r.password_env }}</code>{% else %}—{% endif %}</td>
+        <td>{% if r.lab_group %}<span class="badge bg-secondary">{{ r.lab_group }}</span>{% else %}—{% endif %}</td>
+        <td>
+          {% if r.is_enable %}<span class="badge bg-success">on</span>
+          {% else %}<span class="badge bg-secondary">off</span>{% endif %}
+        </td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-light" href="{{ url_for('admin_ui.datasources_edit', pk=r.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('admin_ui.datasources_delete', pk=r.id) }}" class="d-inline"
+                onsubmit="return confirm('Delete datasource {{ r.name }}?');">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="text-center text-secondary p-4">No datasources defined yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

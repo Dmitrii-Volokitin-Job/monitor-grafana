@@ -1,0 +1,140 @@
+# Prometheus configuration for Docker Compose deployment.
+#
+# Targets are discovered via HTTP-SD from the monitor-exporter
+# admin/SD service on port 9119 — that endpoint serves the rows of
+# monitored_system filtered by type and enabled state. The DB is the
+# source of truth; the admin UI on the same port writes new rows and
+# Prometheus picks them up within `refresh_interval`.
+#
+# To go back to file-based targets, restore the file_sd_configs blocks
+# from git history (commit before the http_sd migration).
+
+global:
+  scrape_interval: 60s
+  evaluation_interval: 30s
+  scrape_timeout: 30s
+  external_labels:
+    monitor: monitor
+
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+scrape_configs:
+  - job_name: blackbox_http
+    scrape_interval: 30s     # demo: tighten for live dashboards (was 5m)
+    scrape_timeout: 25s
+    metrics_path: /probe
+    http_sd_configs:
+      - url: http://monitor-exporter:9119/sd/http
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__param_module]
+        target_label: __param_module
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+      - source_labels: [__param_target]
+        target_label: instance
+
+  - job_name: blackbox_tcp
+    scrape_interval: 30s     # demo: tighten for live dashboards (was 5m)
+    scrape_timeout: 10s
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    http_sd_configs:
+      - url: http://monitor-exporter:9119/sd/tcp
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+      - source_labels: [__param_target]
+        target_label: instance
+
+  - job_name: blackbox_icmp
+    scrape_interval: 2m
+    scrape_timeout: 10s
+    metrics_path: /probe
+    params:
+      module: [icmp_ping]
+    http_sd_configs:
+      - url: http://monitor-exporter:9119/sd/icmp
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+      - source_labels: [__param_target]
+        target_label: instance
+
+  - job_name: monitor_exporter
+    scrape_interval: 5m
+    scrape_timeout: 30s
+    static_configs:
+      - targets:
+          - monitor-exporter:9116
+
+  - job_name: ssl_certificates
+    scrape_interval: 5m      # demo: tighten for live dashboards (was 1h)
+    scrape_timeout: 30s
+    metrics_path: /probe
+    http_sd_configs:
+      - url: http://monitor-exporter:9119/sd/ssl
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: ssl-exporter:9117
+      - source_labels: [__param_target]
+        target_label: instance
+
+  - job_name: prometheus
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  - job_name: blackbox_grpc
+    scrape_interval: 1m
+    scrape_timeout: 15s
+    metrics_path: /probe
+    http_sd_configs:
+      - url: http://monitor-exporter:9119/sd/grpc
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__param_module]
+        target_label: __param_module
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+      - source_labels: [__param_target]
+        target_label: instance
+
+  - job_name: blackbox_dns
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /probe
+    http_sd_configs:
+      - url: http://monitor-exporter:9119/sd/dns
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__param_module]
+        target_label: __param_module
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+      - source_labels: [__param_target]
+        target_label: instance
+
+  - job_name: blackbox_exporter
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - blackbox-exporter:9115

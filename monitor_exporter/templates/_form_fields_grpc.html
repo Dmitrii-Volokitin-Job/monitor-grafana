@@ -1,0 +1,15 @@
+<div class="row g-3">
+  <div class="col-md-8">
+    <label class="form-label">Target (host:port) *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="grpc.example.com:443">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Blackbox module *</label>
+    <select class="form-select" name="blackbox_module" required>
+      <option value="grpc"       {% if row.blackbox_module == 'grpc' %}selected{% endif %}>grpc (TLS)</option>
+      <option value="grpc_plain" {% if row.blackbox_module == 'grpc_plain' %}selected{% endif %}>grpc_plain (no TLS)</option>
+    </select>
+  </div>
+</div>
+<div class="form-text">Uses Blackbox's grpc prober — server must implement <code>grpc.health.v1.Health/Check</code>.</div>

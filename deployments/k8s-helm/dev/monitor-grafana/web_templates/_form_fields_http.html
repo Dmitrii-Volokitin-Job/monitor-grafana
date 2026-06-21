@@ -1,0 +1,25 @@
+<div class="row g-3">
+  <div class="col-md-8">
+    <label class="form-label">URL *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="https://service.example.com/actuator/health">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Blackbox module *</label>
+    <select class="form-select" name="blackbox_module" required>
+      {% for m in blackbox_modules %}
+        <option value="{{ m }}" {% if m == (row.blackbox_module or 'http_2xx') %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Expected status code</label>
+    <input type="number" class="form-control" name="expected_status_code"
+           value="{{ row.expected_status_code or '' }}" placeholder="200">
+  </div>
+  <div class="col-md-8">
+    <label class="form-label">Health-check path (informational)</label>
+    <input class="form-control" name="health_check_path" value="{{ row.health_check_path or '' }}"
+           placeholder="/actuator/health">
+  </div>
+</div>

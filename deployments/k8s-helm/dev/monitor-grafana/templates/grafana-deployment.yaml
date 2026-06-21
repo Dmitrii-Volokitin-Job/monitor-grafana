@@ -1,0 +1,195 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "monitor.componentLabels" (dict "component" "grafana" "context" $) | nindent 4 }}
+spec:
+  replicas: {{ .Values.grafana.replicas }}
+  selector:
+    matchLabels:
+      {{- include "monitor.selectorLabels" (dict "component" "grafana" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/grafana-config.yaml") . | sha256sum }}
+        checksum/provisioning: {{ include (print $.Template.BasePath "/grafana-provisioning.yaml") . | sha256sum }}
+        {{- if .Values.networkAnnotation }}
+        k8s.v1.cni.cncf.io/networks: {{ .Values.networkAnnotation | quote }}
+        {{- end }}
+      labels:
+        {{- include "monitor.selectorLabels" (dict "component" "grafana" "context" $) | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      initContainers:
+        - name: grafana-reset-admin
+          image: {{ .Values.grafana.image }}
+          command:
+            - sh
+            - -c
+            - |
+              if [ -f /var/lib/grafana/grafana.db ]; then
+                grafana-cli --homepath /usr/share/grafana admin reset-admin-password "$GF_SECURITY_ADMIN_PASSWORD"
+              fi
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin-secret
+                  key: admin-password
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/grafana
+      containers:
+        - name: grafana
+          image: {{ .Values.grafana.image }}
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin-secret
+                  key: admin-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin-secret
+                  key: admin-password
+            - name: GF_INSTALL_PLUGINS
+              value: ""
+            - name: GF_DS_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: monitor-db-secrets
+                  key: postgres-password
+                  optional: true
+            - name: GF_SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-smtp-secret
+                  key: smtp-user
+                  optional: true
+            - name: GF_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-smtp-secret
+                  key: smtp-password
+                  optional: true
+          resources:
+            {{- toYaml .Values.grafana.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          volumeMounts:
+            - name: config
+              mountPath: /etc/grafana/grafana.ini
+              subPath: grafana.ini
+            - name: provisioning-datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: provisioning-dashboards
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: provisioning-alerting
+              mountPath: /etc/grafana/provisioning/alerting
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+            - name: data
+              mountPath: /var/lib/grafana
+        # smtp-to-graph sidecar: accepts SMTP on the pod loopback (127.0.0.1:2525)
+        # from the grafana container and forwards each message to Microsoft Graph
+        # via OAuth2 client-credentials. Replaces direct SMTP submission since the
+        # tenant blocks SMTP AUTH. See smtp_to_graph/main.py + plan in repo.
+        - name: smtp-to-graph
+          image: "{{ .Values.smtpToGraph.image.repository }}:{{ .Values.smtpToGraph.image.tag }}"
+          imagePullPolicy: {{ .Values.smtpToGraph.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 8080
+              name: sidecar-http
+          env:
+            - name: TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-graph-secret
+                  key: tenant-id
+                  optional: true
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-graph-secret
+                  key: client-id
+                  optional: true
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-graph-secret
+                  key: client-secret
+                  optional: true
+            - name: FROM_ADDRESS
+              value: {{ .Values.smtpToGraph.fromAddress | quote }}
+            - name: LISTEN_PORT
+              value: {{ .Values.smtpToGraph.listenPort | default 2525 | quote }}
+            - name: HEALTH_PORT
+              value: "8080"
+            - name: LOG_LEVEL
+              value: {{ .Values.smtpToGraph.logLevel | default "INFO" | quote }}
+          resources:
+            {{- toYaml .Values.smtpToGraph.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          # Mount the bundled main.py over the image's copy. Lets us push
+          # code changes via a chart re-sync without rebuilding the
+          # smtp-to-graph image (same iteration pattern as the Monitor
+          # Exporter — see monitor-exporter-deployment.yaml + -code.yaml).
+          volumeMounts:
+            - name: smtp-to-graph-code
+              mountPath: /app/main.py
+              subPath: main.py
+      volumes:
+        - name: smtp-to-graph-code
+          configMap:
+            name: smtp-to-graph-code
+        - name: config
+          configMap:
+            name: grafana-config
+        - name: provisioning-datasources
+          configMap:
+            name: grafana-provisioning-datasources
+        - name: provisioning-dashboards
+          configMap:
+            name: grafana-provisioning-dashboards
+        - name: provisioning-alerting
+          configMap:
+            name: grafana-provisioning-alerting
+        - name: dashboards
+          projected:
+            sources:
+            {{- range $name, $_ := .Files.Glob "dashboards/*.json" }}
+              - configMap:
+                  name: grafana-dashboard-{{ $name | base | trimSuffix ".json" }}
+            {{- end }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: grafana-data

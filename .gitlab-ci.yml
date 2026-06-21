@@ -1,0 +1,178 @@
+stages:
+  - build
+  - upload
+  - deploy
+
+variables:
+  CI_IMAGE_NAME: "monitor-exporter"
+  CI_IMAGE_PATH: "monitor/monitor-exporter"
+  STORAGE_DRIVER: vfs
+  BUILDAH_ISOLATION: chroot
+  BUILDAH_CLI_RETRY_OPTS: "--retry 5 --retry-delay 10s"
+  BUILDAH_CLI_TLS_OPTS: "--tls-verify=false"
+
+before_script:
+  # Determine image tags based on branch
+  - |
+    if [[ "$CI_COMMIT_REF_NAME" =~ ^release/(.+)$ ]]; then
+      export CI_TAG_1="${BASH_REMATCH[1]}"
+      export CI_TAG_2="release"
+    elif [[ "$CI_COMMIT_REF_NAME" == "develop" ]]; then
+      export CI_TAG_1="$(cat VERSION 2>/dev/null || echo '0.1.0')-SNAPSHOT"
+      export CI_TAG_2="latest"
+    else
+      export CI_TAG_1="latest"
+      export CI_TAG_2=""
+    fi
+  - echo "Tags -> CI_TAG_1=$CI_TAG_1, CI_TAG_2=$CI_TAG_2"
+
+# ---------------------------------------------------------------------------
+# BUILD
+# ---------------------------------------------------------------------------
+build:
+  stage: build
+  image: quay.io/buildah/stable:9.4
+  variables:
+    STORAGE_DRIVER: vfs
+    BUILDAH_ISOLATION: chroot
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "develop"'
+    - if: '$CI_COMMIT_REF_NAME =~ /^release\//'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - mkdir -p images
+    - >
+      buildah build
+      --tls-verify=false
+      -t $CI_IMAGE_NAME:latest
+      --layers=true
+      -f docker/Dockerfile.monitor-exporter .
+    - >
+      buildah push --format docker
+      $CI_IMAGE_NAME:latest
+      docker-archive:images/$CI_IMAGE_NAME.tar:$CI_REGISTRY/$CI_IMAGE_PATH:latest
+  artifacts:
+    paths:
+      - images/
+    expire_in: 1 hour
+
+# ---------------------------------------------------------------------------
+# UPLOAD — VDCR Registry
+# ---------------------------------------------------------------------------
+upload_to_vdcr:
+  stage: upload
+  image: quay.io/buildah/stable:9.4
+  variables:
+    STORAGE_DRIVER: vfs
+    BUILDAH_ISOLATION: chroot
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "develop"'
+    - if: '$CI_COMMIT_REF_NAME =~ /^release\//'
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - buildah pull docker-archive:images/$CI_IMAGE_NAME.tar
+    - buildah login $BUILDAH_CLI_TLS_OPTS -u $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - buildah tag localhost/$CI_IMAGE_NAME:latest $CI_REGISTRY/$CI_IMAGE_PATH:$CI_TAG_1
+    - buildah push $BUILDAH_CLI_RETRY_OPTS $BUILDAH_CLI_TLS_OPTS $CI_REGISTRY/$CI_IMAGE_PATH:$CI_TAG_1
+    - |
+      if [ -n "$CI_TAG_2" ]; then
+        buildah tag localhost/$CI_IMAGE_NAME:latest $CI_REGISTRY/$CI_IMAGE_PATH:$CI_TAG_2
+        buildah push $BUILDAH_CLI_RETRY_OPTS $BUILDAH_CLI_TLS_OPTS $CI_REGISTRY/$CI_IMAGE_PATH:$CI_TAG_2
+      fi
+
+# ---------------------------------------------------------------------------
+# BUILD — smtp-to-graph sidecar (Grafana mail bridge to Microsoft Graph)
+# ---------------------------------------------------------------------------
+build_sidecar:
+  stage: build
+  image: quay.io/buildah/stable:9.4
+  variables:
+    STORAGE_DRIVER: vfs
+    BUILDAH_ISOLATION: chroot
+    SIDECAR_IMAGE_NAME: "smtp-to-graph"
+    SIDECAR_IMAGE_PATH: "monitor/smtp-to-graph"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "develop"'
+    - if: '$CI_COMMIT_REF_NAME =~ /^release\//'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - mkdir -p images
+    - >
+      buildah build
+      --tls-verify=false
+      -t $SIDECAR_IMAGE_NAME:latest
+      --layers=true
+      -f docker/Dockerfile.smtp-to-graph .
+    - >
+      buildah push --format docker
+      $SIDECAR_IMAGE_NAME:latest
+      docker-archive:images/$SIDECAR_IMAGE_NAME.tar:$CI_REGISTRY/$SIDECAR_IMAGE_PATH:latest
+  artifacts:
+    paths:
+      - images/$SIDECAR_IMAGE_NAME.tar
+    expire_in: 1 hour
+
+# ---------------------------------------------------------------------------
+# UPLOAD — smtp-to-graph to VDCR Registry
+# ---------------------------------------------------------------------------
+upload_sidecar_to_vdcr:
+  stage: upload
+  image: quay.io/buildah/stable:9.4
+  variables:
+    STORAGE_DRIVER: vfs
+    BUILDAH_ISOLATION: chroot
+    SIDECAR_IMAGE_NAME: "smtp-to-graph"
+    SIDECAR_IMAGE_PATH: "monitor/smtp-to-graph"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "develop"'
+    - if: '$CI_COMMIT_REF_NAME =~ /^release\//'
+  needs:
+    - job: build_sidecar
+      artifacts: true
+  script:
+    - buildah pull docker-archive:images/$SIDECAR_IMAGE_NAME.tar
+    - buildah login $BUILDAH_CLI_TLS_OPTS -u $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - buildah tag localhost/$SIDECAR_IMAGE_NAME:latest $CI_REGISTRY/$SIDECAR_IMAGE_PATH:$CI_TAG_1
+    - buildah push $BUILDAH_CLI_RETRY_OPTS $BUILDAH_CLI_TLS_OPTS $CI_REGISTRY/$SIDECAR_IMAGE_PATH:$CI_TAG_1
+    - |
+      if [ -n "$CI_TAG_2" ]; then
+        buildah tag localhost/$SIDECAR_IMAGE_NAME:latest $CI_REGISTRY/$SIDECAR_IMAGE_PATH:$CI_TAG_2
+        buildah push $BUILDAH_CLI_RETRY_OPTS $BUILDAH_CLI_TLS_OPTS $CI_REGISTRY/$SIDECAR_IMAGE_PATH:$CI_TAG_2
+      fi
+
+# ---------------------------------------------------------------------------
+# DEPLOY — restart Grafana on VDCR Dev via ArgoCD (delete Deployment → ArgoCD recreates it)
+# Requires CI/CD variables: ARGOCD_BASE, ARGOCD_TOKEN
+# ---------------------------------------------------------------------------
+deploy_on_VDCR_DEV:
+  stage: deploy
+  image: curlimages/curl:8.8.0
+  allow_failure: true
+  before_script: []
+  variables:
+    ARGOCD_APP: "monitor-grafana-dev"
+    RESOURCE_NAMESPACE: "monitor-dev"
+    RESOURCE_NAME: "grafana"
+    ARGOCD_KIND: "Deployment"
+    ARGOCD_GROUP: "apps"
+    ARGOCD_VERSION: "v1"
+    INSECURE: "true"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "develop"'
+  needs:
+    - job: upload_to_vdcr
+    - job: upload_sidecar_to_vdcr
+  script:
+    - set -euo pipefail
+    - echo "ARGOCD_TOKEN length $(echo ${ARGOCD_TOKEN} | wc -c)"
+    - |
+      URL="${ARGOCD_BASE}/api/v1/applications/${ARGOCD_APP}/resource?kind=${ARGOCD_KIND}&version=${ARGOCD_VERSION}&group=${ARGOCD_GROUP}&namespace=${RESOURCE_NAMESPACE}&resourceName=${RESOURCE_NAME}"
+      [ "${INSECURE}" = "true" ] && KOPT="-k" || KOPT=""
+      echo "DELETE ${ARGOCD_KIND}/${RESOURCE_NAMESPACE}/${RESOURCE_NAME} from ArgoCD app ${ARGOCD_APP}"
+      BODY='{ "manifest": "string" }'
+      HTTP_CODE=$(curl -sS ${KOPT} --http1.1 -o /tmp/resp.json -w "%{http_code}" -X DELETE -H "Authorization: Bearer ${ARGOCD_TOKEN}" -H "Accept: application/json" -H "Content-Type: application/json" --data "${BODY}" "${URL}")
+      echo "HTTP ${HTTP_CODE}"
+      cat /tmp/resp.json || true
+      [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]

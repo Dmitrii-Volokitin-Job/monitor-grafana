@@ -1,0 +1,30 @@
+<div class="row g-3">
+  <div class="col-md-4">
+    <label class="form-label">Target IP / hostname *</label>
+    <input class="form-control" name="url" required value="{{ row.url or '' }}"
+           placeholder="192.0.2.10">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">node_id</label>
+    <input class="form-control" name="node_id" value="{{ row.node_id or '' }}"
+           placeholder="prod-node-1">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">node_name</label>
+    <input class="form-control" name="node_name" value="{{ row.node_name or '' }}"
+           placeholder="Demo Lab A - Master 1">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">lab_group *</label>
+    <input class="form-control" name="lab_group" required list="lab-list"
+           value="{{ row.lab_group or '' }}" placeholder="demo-lab-a">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">node_type *</label>
+    <select class="form-select" name="node_type" required>
+      {% for t in node_types %}
+        <option value="{{ t }}" {% if t == row.node_type %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>

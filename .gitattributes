@@ -1,0 +1,16 @@
+# Normalize line endings on commit so Windows-edited files don't keep
+# triggering "CRLF will be replaced by LF" warnings on macOS / Linux.
+# Detected by Git heuristics — binaries are left alone via `-text` overrides
+# below.
+* text=auto eol=lf
+
+# Binary safety — never CRLF/LF-translate these.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.tar  binary
